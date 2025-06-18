@@ -20,7 +20,7 @@ CORS(app)
 
 # --- Konfigurasi Database (WAJIB DISESUAIKAN) ---
 # Ganti 'postgres:PasswordAnda123' dengan username dan password PostgreSQL Anda yang sebenarnya.
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:password@localhost/proyek_pajak'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost/proyek_pajak'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -30,7 +30,7 @@ UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 # Path ke folder bin dari poppler di Windows
-POPPLER_PATH = r'C:\poppler\poppler-24.08.0\Library\bin'
+POPPLER_PATH = r'C:\Program Files\poppler-24.08.0\Library\bin'
 # Path ke Tesseract jika tidak ada di PATH sistem (hapus tanda # jika diperlukan)
 # pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -128,8 +128,29 @@ def process_file():
 
         dpp, ppn = 0.0, 0.0
         for line in raw_text.splitlines():
-            if "Dasar Pengenaan Pajak" in line: dpp = clean_number(re.findall(r'([\d.,]+)', line)[-1])
-            if "Total PPN" in line: ppn = clean_number(re.findall(r'([\d.,]+)', line)[-1])
+            line_clean = line.strip()
+            
+            # Cari DPP
+            if "Dasar Pengenaan Pajak" in line_clean:
+                numbers = re.findall(r'([\d.,]+)', line_clean)
+                if numbers:
+                    try:
+                        dpp = clean_number(numbers[-1])
+                    except Exception as e:
+                        print(f"[ERROR] DPP error in line: {line_clean} → {e}")
+                else:
+                    print(f"[WARNING] Tidak ditemukan angka DPP dalam baris: {line_clean}")
+
+            # Cari PPN
+            if "Total PPN" in line_clean:
+                numbers = re.findall(r'([\d.,]+)', line_clean)
+                if numbers:
+                    try:
+                        ppn = clean_number(numbers[-1])
+                    except Exception as e:
+                        print(f"[ERROR] PPN error in line: {line_clean} → {e}")
+                else:
+                    print(f"[WARNING] Tidak ditemukan angka PPN dalam baris: {line_clean}")
 
         # ==========================================================
         # LOGIKA EKSTRAKSI KETERANGAN BARU - MENJAGA FORMAT ASLI
