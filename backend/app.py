@@ -11,6 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from pdf2image import convert_from_path
 import pandas as pd
 import io
+from thefuzz import fuzz
 
 # ==============================================================================
 # KONFIGURASI APLIKASI
@@ -105,20 +106,36 @@ def process_file():
         raw_text = pytesseract.image_to_string(thresh, lang='ind', config=custom_config)
         
         pt_utama_cleaned = clean_string(nama_pt_utama)
+        
         pembeli_keyword = "Pembeli Barang Kena Pajak"
         parts = re.split(pembeli_keyword, raw_text, flags=re.IGNORECASE)
         if len(parts) < 2: return jsonify(error="Format faktur tidak standar, keyword 'Pembeli' tidak ditemukan."), 400
         blok_penjual_text, blok_pembeli_text = parts
         
         jenis_pajak, blok_rekanan_text = None, None
-        if pt_utama_cleaned in clean_string(blok_pembeli_text):
-            jenis_pajak = 'PPN_MASUKAN'
-            blok_rekanan_text = blok_penjual_text
-        elif pt_utama_cleaned in clean_string(blok_penjual_text):
-            jenis_pajak = 'PPN_KELUARAN'
-            blok_rekanan_text = blok_pembeli_text
-        else:
-            return jsonify(error=f"Nama PT Utama '{nama_pt_utama}' tidak ditemukan di faktur."), 400
+        
+        # Menggunakan thefuzz untuk perbandingan yang lebih baik
+        from thefuzz import fuzz
+        
+        found_in_pembeli = False
+        for line in blok_pembeli_text.splitlines():
+            line_cleaned = clean_string(line)
+            if line_cleaned and fuzz.ratio(pt_utama_cleaned, line_cleaned) > 70:
+                jenis_pajak = 'PPN_MASUKAN'
+                blok_rekanan_text = blok_penjual_text
+                found_in_pembeli = True
+                break
+        
+        if not found_in_pembeli:
+            for line in blok_penjual_text.splitlines():
+                line_cleaned = clean_string(line)
+                if line_cleaned and fuzz.ratio(pt_utama_cleaned, line_cleaned) > 70:
+                    jenis_pajak = 'PPN_KELUARAN'
+                    blok_rekanan_text = blok_pembeli_text
+                    break
+        
+        if not jenis_pajak:
+            return jsonify(error=f"Nama PT Utama '{nama_pt_utama}' tidak dapat ditemukan dengan tingkat kemiripan yang cukup."), 400
         
         # Langkah 5: Ekstraksi Data
         nama_rekanan_match = re.search(r"Nama\s*:\s*(.+)", blok_rekanan_text)
@@ -128,15 +145,19 @@ def process_file():
 
         dpp, ppn = 0.0, 0.0
         for line in raw_text.splitlines():
-            if "Dasar Pengenaan Pajak" in line: dpp = clean_number(re.findall(r'([\d.,]+)', line)[-1])
-            if "Total PPN" in line: ppn = clean_number(re.findall(r'([\d.,]+)', line)[-1])
+            if "Dasar Pengenaan Pajak" in line:
+                angka = re.findall(r'([\d.,]+)', line)
+                if angka: dpp = clean_number(angka[-1])
+            if "Total PPN" in line:
+                angka = re.findall(r'([\d.,]+)', line)
+                if angka: ppn = clean_number(angka[-1])
 
         # ==========================================================
-        # LOGIKA EKSTRAKSI KETERANGAN BARU - MENJAGA FORMAT ASLI
+        # LOGIKA EKSTRAKSI KETERANGAN - PENYEMPURNAAN FINAL
         # ==========================================================
         keterangan = "Tidak ditemukan"
         try:
-            start_keyword = "Nama Barang Kena Pajak"
+            start_keyword = "Nama Barang Kena Pajak / Jasa Kena Pajak"
             end_keyword = "Dasar Pengenaan Pajak"
             
             start_index = re.search(start_keyword, raw_text, re.IGNORECASE).end()
@@ -145,25 +166,30 @@ def process_file():
             keterangan_block = raw_text[start_index:end_index]
             
             cleaned_lines = []
-            header_blacklist = ["harga jual", "penggantian", "uang muka", "termin"]
-
+            # Blacklist untuk membuang baris header yang mungkin masuk
+            blacklist = ["jual", "penggantian", "potongan", "muka", "termin", "likurangi", "kena pajak"]
+            
             for line in keterangan_block.splitlines():
                 line = line.strip()
                 line_lower = line.lower()
 
-                # Lewati jika baris kosong atau merupakan header
-                if not line or any(keyword in line_lower for keyword in header_blacklist):
+                # Lewati jika baris kosong atau mengandung kata kunci dari blacklist
+                if not line or any(keyword in line_lower for keyword in blacklist):
                     continue
                 
-                # Hapus nomor urut di awal
-                processed_line = re.sub(r'^\d+\s*[.)]?\s*', '', line)
+                # Jika baris dimulai dengan 'Rp', anggap sebagai baris rincian harga dan simpan
+                if line_lower.startswith('rp'):
+                    cleaned_lines.append(line)
+                    continue
 
-                # Jika baris TIDAK diawali dengan 'Rp', coba hapus harga di akhir.
-                # Jika diawali 'Rp', biarkan apa adanya.
-                if not processed_line.lower().startswith('rp'):
-                    processed_line = re.sub(r'\s+[\d.,]{5,}.*$', '', processed_line).strip()
+                # Jika tidak, anggap sebagai baris deskripsi dan coba bersihkan
+                # Hapus nomor urut atau OCR error yang mirip di awal (seperti "La", "a", "1.", "L ")
+                processed_line = re.sub(r'^[a-zA-Z\d]\s*[.)]?\s*', '', line)
+
+                # Hapus harga dan teks sampah di akhir (seperti | - ")
+                processed_line = re.sub(r'\s+[\d.,]{4,}.*$', '', processed_line).strip()
                 
-                # Hanya simpan baris jika masih ada isinya setelah diproses
+                # Hanya simpan jika hasilnya masih mengandung teks yang berarti
                 if processed_line:
                     cleaned_lines.append(processed_line)
 
