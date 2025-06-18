@@ -1,0 +1,30 @@
+# Abaikan lingkungan virtual
+venv/
+.env
+
+# Abaikan file OS & IDE
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+.DS_Store
+*.log
+
+# Abaikan file bawaan editor
+.vscode/
+.idea/
+
+# Abaikan PDF dan file upload hasil testing
+uploads/
+*.pdf
+
+# Abaikan file node modules kalau kamu pakai React
+node_modules/
+build/
+dist/
+
+# Abaikan file konfigurasi lokal
+*.db
+*.sqlite3
+.env.*
