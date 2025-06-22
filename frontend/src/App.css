@@ -152,3 +152,74 @@ input[type="file"] {
 .textarea-field {
   resize: vertical;
 }
+
+.result-item {
+  border-bottom: 1px solid #eee;
+  padding: 10px 5px;
+  list-style-type: none;
+  margin-left: 0;
+}
+
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.file-name {
+  color: #2c3e50;
+}
+
+.error-text {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.success-text {
+  color: #27ae60;
+  font-weight: bold;
+}
+
+.detail-list {
+  margin-top: 5px;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.detail-item {
+  color: #555;
+}
+
+.preview-form-container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.preview-column {
+  flex: 1;
+  max-width: 40%;
+}
+
+.form-column {
+  flex: 1.5;
+}
+
+.preview-img {
+  width: 100%;
+  height: auto;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  object-fit: contain;
+}
+
+.export-button {
+  background-color: #27ae60;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 10px;
+  padding: 10px 15px;
+}
+.export-button:hover {
+  background-color: #219150;
+}

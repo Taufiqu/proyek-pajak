@@ -1,0 +1,41 @@
+{
+  "debug_of": "multi pdf.pdf",
+  "total_halaman": 3,
+  "results": [
+    {
+      "error": "Hal 1: Tidak ditemukan tanggal/faktur"
+    },
+    {
+      "klasifikasi": "PPN_KELUARAN",
+      "data": {
+        "bulan": "October",
+        "tanggal": "2024-10-28",
+        "keterangan": "Harga Ka enggantan/ Uang\nPekerjaan Pembuatan 24 Unit Alas SW Keb. Di Kebun Padang Pelawi PT.\n4 Perkebunan Nusantara IV Reg. 7 Ses. SPK No: TNP/TL/SPK/0459/2024 Tgl\n10/09/2024\nPp UDO.00UU x",
+        "npwp_lawan_transaksi": "47.045.920.2.415.100",
+        "nama_lawan_transaksi": "Tidak Ditemukan",
+        "no_faktur": "010.005-24.49874858",
+        "dpp": 151000000.0,
+        "dpp_str": "Rp 151.000.000,00",
+        "ppn": 0.0,
+        "formatted_ppn": "Rp 0,00",
+        "halaman": 2
+      }
+    },
+    {
+      "klasifikasi": "PPN_KELUARAN",
+      "data": {
+        "bulan": "April",
+        "tanggal": "2024-04-25",
+        "keterangan": "Pengadaan dan Pemasangan Decanter Kapasitas 25 M3/Jam Kebutuhan Di\n4 Kebun Betung PT. Perkebunan Nusantara IV Regional 7 Ses. SPK No:\nOX RO7H-RO/KTR/2024.04.25-4 Tanggal 25 April 2024\na19 J4 :\n:",
+        "npwp_lawan_transaksi": "72.024.042.5.425.202",
+        "nama_lawan_transaksi": "Tidak Ditemukan",
+        "no_faktur": "010.005-24.49874857",
+        "dpp": 3157064754.0,
+        "dpp_str": "Rp 3.157.064.754,00",
+        "ppn": 0.0,
+        "formatted_ppn": "Rp 0,00",
+        "halaman": 3
+      }
+    }
+  ]
+}
