@@ -19,6 +19,9 @@ from openpyxl.styles import Alignment, Font, Border, Side
 import tempfile
 from flask import send_file
 from collections import OrderedDict
+from datetime import datetime
+import hashlib
+from io import BytesIO
 
 # ==============================================================================
 # KONFIGURASI APLIKASI
@@ -72,15 +75,95 @@ def clean_number(text):
     """Membersihkan string angka dari format Rupiah ke format standar float."""
     if not text: return 0.0
     cleaned_text = re.sub(r'[^\d,.-]', '', text).strip()
-    return float(cleaned_text.replace('.', '').replace(',', '.'))
+    try:
+        # Jika format Indonesia: 1.234.567,89 → 1234567.89
+        if ',' in cleaned_text and '.' in cleaned_text:
+            cleaned_text = cleaned_text.replace('.', '').replace(',', '.')
+        # Jika format: 1.000.000 → 1000000
+        elif '.' in cleaned_text and ',' not in cleaned_text:
+            cleaned_text = cleaned_text.replace('.', '')
+        # Jika format: 1,000.00 (gaya US), tidak diubah
+
+        return float(cleaned_text)
+    except ValueError:
+        print(f"[SKIP] clean_number gagal mengubah '{text}' → None")
+        return 0.0
 
 def clean_string(text):
-    """Membersihkan string nama perusahaan untuk perbandingan yang andal."""
-    if not text: return ""
+    """
+    Membersihkan string nama perusahaan untuk perbandingan yang andal,
+    dengan penanganan noise OCR yang lebih baik.
+    """
+    if not text:
+        return ""
+
+    # 1. Jika ada ':', ambil teks setelahnya untuk membuang label seperti "Nama :"
+    if ':' in text:
+        text = text.split(':', 1)[1]
+
     text = text.upper()
-    text = re.sub(r'[.,]', '', text)
-    text = re.sub(r'\b(PT|CV)\b', '', text)
-    return text.strip()
+
+    # 2. Hapus semua simbol selain huruf dan spasi. Ini lebih agresif dari \w
+    #    karena \w juga mencakup angka dan _, yang jarang ada di awal/tengah nama PT.
+    text = re.sub(r'[^A-Z\s]', '', text)
+
+    # 3. Hapus sebutan umum perusahaan
+    text = re.sub(r'\b(PT|CV|TBK|PERSERO|PERUM|UD)\b', '', text)
+    
+    # 4. Pisahkan menjadi kata-kata dan buang noise
+    words = text.split()
+    
+    # Simpan hanya kata-kata yang panjangnya lebih dari 2 huruf,
+    # ini efektif menghilangkan noise seperti 'AN', 'AA', 'MN'
+    cleaned_words = [word for word in words if len(word) > 2]
+
+    # 5. Gabungkan kembali kata-kata yang sudah bersih
+    return " ".join(cleaned_words).strip()
+
+def extract_faktur_tanggal(raw_text):
+    import re
+    from datetime import datetime
+
+    no_faktur = None
+    tanggal_obj = None
+
+    print("[🧾 DEBUG OCR-Easy Input] ------------")
+    print(raw_text)
+    print("--------------------------------------")
+
+    # Normalisasi koma → titik, dan hilangkan spasi tidak perlu
+    normalized_text = raw_text.replace(",", ".").replace("“", '"')
+
+    # Ekstrak semua kemungkinan kandidat faktur dengan regex toleran
+    kandidat_faktur = re.findall(r"\d{3}[.\s]?\d{3}[-.\s]?\d{2}[.\s]?\d{8}", normalized_text)
+    kandidat_faktur = [re.sub(r"\s+", "", k) for k in kandidat_faktur]
+
+    if kandidat_faktur:
+        no_faktur = max(kandidat_faktur, key=len)
+        print("[✅ DEBUG] Nomor faktur ditemukan:", no_faktur)
+    else:
+        print("[❌ DEBUG] Nomor faktur tidak ditemukan")
+
+    # Ekstraksi tanggal
+    tanggal_match = re.search(r"(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})", raw_text)
+    if tanggal_match:
+        hari, bulan, tahun = tanggal_match.groups()
+        bulan_map = {
+            "januari": "January", "februari": "February", "maret": "March", "april": "April",
+            "mei": "May", "juni": "June", "juli": "July", "agustus": "August", "september": "September",
+            "oktober": "October", "november": "November", "desember": "December"
+        }
+        bulan_inggris = bulan_map.get(bulan.lower())
+        if bulan_inggris:
+            try:
+                tanggal_obj = datetime.strptime(f"{hari} {bulan_inggris} {tahun}", "%d %B %Y")
+                print("[DEBUG] Tanggal ditemukan:", tanggal_obj)
+            except Exception as e:
+                print("[❌ ERROR] Gagal parsing tanggal:", e)
+        else:
+            print("[❌ DEBUG] Nama bulan tidak dikenali:", bulan)
+
+    return no_faktur, tanggal_obj
 
 def format_currency(value, with_symbol=True):
     try:
@@ -106,180 +189,181 @@ def is_valid_image(path):
 
 def extract_keterangan(raw_text):
     try:
-        start_match = re.search(r"Nama Barang Kena Pajak\s*/?\s*Jasa Kena Pajak", raw_text, re.IGNORECASE)
-        end_match = re.search(r"Dasar Pengenaan Pajak", raw_text, re.IGNORECASE)
+        start_match = re.search(r"Nama\s+Barang\s+Kena\s+Pajak.*?", raw_text, re.IGNORECASE)
+        end_match = re.search(r"Dasar\s+Pengenaan\s+Pajak", raw_text, re.IGNORECASE)
 
         if not start_match or not end_match:
-            print("[DEBUG] ❌ Tidak ditemukan anchor keterangan.")
             return "Tidak ditemukan"
 
-        start = start_match.end()
-        end = end_match.start()
-        blok = raw_text[start:end]
-
-        print("\n[DEBUG] 🔍 BLOK KETERANGAN MENTAH:")
-        print(blok)
-        print("-" * 60)
-
-        blocklist_keywords = [
-            "uang muka", "termin", "dikurangi", "ppnbm",
-            "harga jual", "penggantian", "potongan harga",
-            "dasar pengenaan pajak", "total ppn", "total ppnbm"
-        ]
-        token_blacklist = {"la", "td", "dl", "the"}
-        typo_map = {
-            "indusiri": "industri"
-        }
+        block = raw_text[start_match.end():end_match.start()]
+        lines = [line.strip() for line in block.splitlines() if line.strip()]
 
         cleaned_lines = []
-        for line in blok.splitlines():
-            original = line
-            line = line.strip()
-            if not line:
+        seen_lines = set()
+
+        # Kata-kata noise umum dari OCR yang tidak relevan
+        noise_words = {'oh', 'ka', 'bah', 'iai', 'aa', 'tr', 'id', 'na', 'in', '5', '2', '3', '4', 'es', 'po', 'sz'}
+        typo_map = {
+            "DECA R": "DECANTER", 
+            "DESAND YCLON": "DESANDING CYCLONE",
+            "PESIFIKA -SUA": "SPESIFIKASI SESUAI",
+            "MATERI Tera": "MATERIAL", 
+            "MATER INSTALASI": "MATERIAL INSTALASI",
+            "ikurangi": "Dikurangi",  # typo umum
+        }
+
+        for line in lines:
+            if line in seen_lines:
+                continue
+            seen_lines.add(line)
+
+            # Normalisasi dasar
+            line = re.sub(r'[^\w\s.,:;/\-()Rp]', '', line).strip()
+
+            # Koreksi typo
+            for typo, correct in typo_map.items():
+                if typo in line:
+                    line = line.replace(typo, correct)
+
+            # Hilangkan token noise (kata satuan pendek tak relevan)
+            tokens = [tok for tok in line.split() if tok.lower() not in noise_words]
+            if not tokens:
                 continue
 
-            lower_line = line.lower()
-            if any(re.search(rf"\b{kw}\b", lower_line) for kw in blocklist_keywords):
-                print(f"[FILTERED] Blocklist ⛔ '{original}'")
-                continue
+            # Gabung ulang dan tambahkan separator
+            cleaned_line = ' '.join(tokens).strip()
+            if cleaned_line:
+                cleaned_lines.append(cleaned_line)
 
-            # Gabungkan baris seperti "Rp xxx x 1" ke baris sebelumnya
-            if re.match(r"^rp\s*[\d.,]+\s*x\s*\d*", line.lower()):
-                if cleaned_lines:
-                    cleaned_lines[-1] = f"{cleaned_lines[-1]} {line}"
-                    print(f"[MERGE] Gabung baris harga → {cleaned_lines[-1]}")
-                continue
-
-            # Normalisasi karakter
-            line = re.sub(r"[^\w\s.,:;/\-()Rp&]", "", line)
-            line = re.sub(r"[\|\-\"']+$", "", line).strip()
-
-            # Token filtering
-            tokens = line.split()
-            filtered_tokens = []
-
-            for token in tokens:
-                token_lower = token.lower()
-                if token_lower in token_blacklist:
-                    print(f"[TOKEN ❌] '{token}' → blacklist")
-                    continue
-                if len(token_lower) <= 1 and not token_lower.isalpha():
-                    print(f"[TOKEN ❌] '{token}' → terlalu pendek")
-                    continue
-                filtered_tokens.append(token)
-
-            line = " ".join(filtered_tokens).strip()
-
-            # Typo correction
-            for typo, correction in typo_map.items():
-                line = re.sub(rf"\b{typo}\b", correction, line, flags=re.IGNORECASE)
-
-            if line in cleaned_lines:
-                print(f"[DUPLICATE] 🔁 Baris duplikat di-skip: {line}")
-                continue
-
-            if line:
-                cleaned_lines.append(line)
-
-        # Hilangkan duplikasi & join jadi satu baris
-        final_keterangan = " ".join(OrderedDict.fromkeys(cleaned_lines)).strip()
-        final_keterangan = re.sub(r'\s{2,}', ' ', final_keterangan)
-
-        print("\n[DEBUG] ✅ HASIL KETERANGAN FINAL:")
-        print(final_keterangan)
-
-        return final_keterangan if final_keterangan else "Tidak ditemukan"
+        return ' || '.join(cleaned_lines) if cleaned_lines else "Tidak ditemukan"
 
     except Exception as e:
-        print(f"[ERROR] extract_keterangan: {e}")
+        print(f"[ERROR extract_keterangan] {e}")
         return "Tidak ditemukan"
     
 def extract_jenis_pajak(raw_text, pt_utama):
-    parts = re.split("Pembeli Barang Kena Pajak", raw_text, flags=re.IGNORECASE)
-    if len(parts) < 2:
-        return None, None, None
-    blok_penjual, blok_pembeli = parts
+    print("[DEBUG] Mulai extract_jenis_pajak...")
     pt_clean = clean_string(pt_utama)
+    parts = re.split(r"Pembeli\s+Barang\s+Kena\s+Pajak", raw_text, flags=re.IGNORECASE)
+    if len(parts) < 2:
+        print("[DEBUG] ❌ Bagian 'Pembeli Barang Kena Pajak' tidak ditemukan, fallback ke full text.")
+        for line in raw_text.splitlines():
+            if fuzz.ratio(clean_string(line), pt_clean) > 70:
+                print(f"[DEBUG] ✅ Ditemukan nama PT utama di full text → PPN MASUKAN")
+                return 'PPN_MASUKAN', "", raw_text
+        print("[DEBUG] ❌ Nama PT utama tidak ditemukan di fallback.")
+        return None, None, None
+
+    blok_penjual, blok_pembeli = parts
+    print("[DEBUG] Bagian pembeli dan penjual ditemukan.")
+    print("------ Blok Pembeli ------")
+    print(blok_pembeli)
+    print("------ Blok Penjual ------")
+    print(blok_penjual)
+
     for line in blok_pembeli.splitlines():
         if fuzz.ratio(clean_string(line), pt_clean) > 70:
+            print(f"[DEBUG] ✅ Nama PT cocok di blok pembeli: {line}")
             return 'PPN_MASUKAN', blok_penjual, blok_pembeli
+
     for line in blok_penjual.splitlines():
         if fuzz.ratio(clean_string(line), pt_clean) > 70:
+            print(f"[DEBUG] ✅ Nama PT cocok di blok penjual: {line}")
             return 'PPN_KELUARAN', blok_pembeli, blok_penjual
+
+    print("[DEBUG] ❌ Nama PT tidak cocok di kedua blok.")
     return None, None, None
 
 def extract_npwp_nama_rekanan(blok_text):
-    nama, npwp, raw_npwp = "Tidak Ditemukan", "Tidak Ditemukan", ""
-    for line in blok_text.splitlines():
-        if fuzz.ratio(line.lower().split(':')[0], 'nama') > 70:
-            nama = line.split(':')[-1].strip()
-        digits = ''.join(re.findall(r'\d', line))
-        if len(digits) >= 15:
-            raw_npwp = digits
-    if len(raw_npwp) >= 15:
-        npwp15 = raw_npwp[:15]
-        npwp = f"{npwp15[:2]}.{npwp15[2:5]}.{npwp15[5:8]}.{npwp15[8]}.{npwp15[9:12]}.{npwp15[12:15]}"
-    return nama, npwp
+    """
+    Menangkap nama dan NPWP rekanan dari blok teks pembeli/penjual
+    dengan logika pembersihan noise yang lebih baik.
+    """
+    nama = "Tidak Ditemukan"
+    npwp = "Tidak Ditemukan"
+    lines = blok_text.splitlines()
 
-def extract_faktur_tanggal(raw_text):
-    faktur = tanggal = None
-    no_match = re.search(r"Nomor Seri Faktur Pajak\s*:\s*([\d.-]+)", raw_text)
-    tanggal_match = re.search(r"(\d{2}\s+\w+\s+\d{4})", raw_text)
-    if no_match:
-        faktur = no_match.group(1).strip()
-    if tanggal_match:
-        bulan_map = {
-            "januari": "January", "februari": "February", "maret": "March", "april": "April",
-            "mei": "May", "juni": "June", "juli": "July", "agustus": "August", "september": "September",
-            "oktober": "October", "november": "November", "desember": "December"
-        }
-        t_parts = tanggal_match.group(1).lower().split()
-        try:
-            tanggal = datetime.strptime(
-                f"{t_parts[0]} {bulan_map.get(t_parts[1], '')} {t_parts[2]}", "%d %B %Y"
-            )
-        except:
-            pass
-    return faktur, tanggal
+    for line in lines:
+        line_clean = line.lower().strip()
+
+        # Ekstraksi Nama dengan pembersihan noise
+        if 'nama' in line_clean:
+            # Ambil semua teks setelah ':'
+            parts = line.split(':', 1)
+            if len(parts) == 2:
+                nama_candidate = parts[1].strip()
+                
+                # Hapus noise umum dan karakter non-alfanumerik di awal
+                nama_candidate = re.sub(r'^[^\w]+', '', nama_candidate)
+                
+                # Pisahkan kata-kata, bersihkan, dan gabungkan kembali.
+                # Ini efektif menghilangkan noise seperti 'AN an aa Mn'
+                words = nama_candidate.split()
+                cleaned_words = []
+                for word in words:
+                    # Hanya pertahankan kata yang mengandung setidaknya satu huruf
+                    # dan memiliki panjang yang wajar.
+                    if any(c.isalpha() for c in word) and len(word) > 1:
+                         # Hapus simbol yang tidak relevan dari kata
+                        cleaned_word = re.sub(r'[^A-Za-z0-9.&]', '', word)
+                        if cleaned_word:
+                            cleaned_words.append(cleaned_word)
+                
+                # Ambil beberapa kata pertama yang paling mungkin adalah nama PT
+                # (misalnya, maksimal 5 kata pertama)
+                nama = ' '.join(cleaned_words[:5])
+
+        # Ekstraksi NPWP (logika Anda sudah cukup baik)
+        if 'npwp' in line_clean:
+            digits = re.sub(r'\D', '', line)
+            if len(digits) >= 15:
+                npwp15 = digits[:15]
+                npwp = f"{npwp15[:2]}.{npwp15[2:5]}.{npwp15[5:8]}.{npwp15[8]}.{npwp15[9:12]}.{npwp15[12:15]}"
+
+    # Pastikan nama yang dikembalikan tidak kosong
+    return nama.strip() if nama.strip() else "Tidak Ditemukan", npwp.strip()
 
 def extract_dpp(raw_text):
     try:
-        lines = raw_text.splitlines()
         dpp = 0.0
         dpp_line = ""
 
+        lines = raw_text.splitlines()
         for line in lines:
             if 'dasar pengenaan pajak' in line.lower():
-                match = re.search(r"([\d.,]+)", line)
-                if match:
-                    dpp = clean_number(match.group(1))
+                numbers = re.findall(r'[\d.,]+', line)
+                if numbers:
+                    last_number = numbers[-1]
+                    dpp = clean_number(last_number)
                     dpp_line = line
-                    print(f"[✅ DPP by 'Dasar Pengenaan Pajak'] {dpp:,.2f} ← {line}")
+                    print(f"[✅ DPP dari baris] {dpp:,.2f} ← {line}")
                     break
 
-        # Cari kandidat lain yang mungkin lebih besar
+        # Ambil semua angka besar
         all_numbers = re.findall(r"[\d.]{1,3}(?:[.,]\d{3}){2,}", raw_text)
         candidates = [clean_number(n) for n in all_numbers if clean_number(n) > 10_000_000]
 
-        if candidates:
-            max_val = max(candidates)
-            if dpp and max_val > dpp * 2:
-                print(f"[🛑 MISMATCH DETECTED] DPP {dpp:,.2f} terlalu kecil dibanding {max_val:,.2f}")
-                print(f"[🔁 Koreksi] Anggap DPP = {max_val:,.2f}, dan {dpp:,.2f} adalah PPN.")
-                return max_val, format_currency(max_val), dpp  # ✅ 3 nilai
+        if dpp > 0:
+            # Jika ada kandidat yang terlalu jauh dari DPP, abaikan override
+            if candidates:
+                max_val = max(candidates)
+                if max_val > dpp * 5:
+                    print(f"[❌ Abaikan fallback DPP] {max_val:,.2f} terlalu jauh dari {dpp:,.2f}")
+                    return dpp, format_currency(dpp), None, None
 
-        if dpp:
-            return dpp, format_currency(dpp), None  # ✅ 3 nilai
+            return dpp, format_currency(dpp), None, None
 
+        # Kalau tidak ada "Dasar Pengenaan Pajak", fallback ke kandidat
         if candidates:
             fallback = max(candidates)
-            print(f"[⚠️ DPP fallback max_val] {fallback:,.2f}")
-            return fallback, format_currency(fallback), None  # ✅ 3 nilai
+            print(f"[⚠️ Fallback DPP] {fallback:,.2f}")
+            return fallback, format_currency(fallback), None, None
 
-        return 0.0, format_currency(0.0), None  # ✅ 3 nilai
+        return 0.0, format_currency(0.0), None, None
+
     except Exception as e:
         print(f"[ERROR extract_dpp] {e}")
-        return 0.0, format_currency(0.0), None
+        return 0.0, format_currency(0.0), None, None
     
 def extract_ppn(raw_text, dpp, override_ppn=None):
     try:
@@ -300,17 +384,14 @@ def extract_ppn(raw_text, dpp, override_ppn=None):
             if found_trigger:
                 relevant_lines.append(line)
 
-        # PRIORITAS UTAMA: Langsung cari "Total PPN"
         total_ppn_match = re.search(r'Total\s*PPN\s*[:\-]?\s*([\d.,]+)', raw_text, re.IGNORECASE)
         if total_ppn_match:
             ppn_val = clean_number(total_ppn_match.group(1))
             print(f"[✅ PPN by 'Total PPN'] {ppn_val:,.2f}")
             return ppn_val, format_currency(ppn_val)
 
-        # Kedua: cari baris yang menyebut 'ppn' (tidak termasuk 'ppnbm')
         for line in relevant_lines:
             text = line.lower()
-
             if 'ppn' in text and 'ppnbm' not in text:
                 match = re.search(r'([\d.,]+)', line)
                 if match:
@@ -330,13 +411,11 @@ def extract_ppn(raw_text, dpp, override_ppn=None):
                 if val > 1_000_000:
                     angka_terdeteksi.append(val)
 
-        # Ketiga: fallback by harga jual - dpp
         if harga_jual and dpp and harga_jual > dpp:
             ppn = round(harga_jual - dpp)
             print(f"[🟠 Fallback PPN = Harga Jual - DPP] {ppn:,}")
             return ppn, format_currency(ppn)
 
-        # Keempat: fallback dari angka terbesar
         if not harga_jual and angka_terdeteksi and dpp > 0:
             kandidat = max(angka_terdeteksi)
             if kandidat > dpp:
@@ -356,20 +435,28 @@ def preprocess_for_ocr(img):
     thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
     return thresh
 
-import json
+def simpan_preview_image(pil_image, halaman_ke):
+    """
+    Simpan file preview hanya jika belum ada (hindari duplikat)
+    """
+    pil_image = pil_image.convert("RGB")
+    buffer = BytesIO()
+    pil_image.save(buffer, format="JPEG", quality=80)
+    img_bytes = buffer.getvalue()
+    img_hash = hashlib.md5(img_bytes).hexdigest()
+    filename = f"{img_hash}_halaman_{halaman_ke}.jpg"
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
 
-def save_debug_json(nama_file_pdf: str, hasil_halaman: list):
-    debug_path = os.path.join(UPLOAD_FOLDER, f"debug_{os.path.splitext(nama_file_pdf)[0]}.json")
-    try:
-        with open(debug_path, 'w', encoding='utf-8') as f:
-            json.dump({
-                "debug_of": nama_file_pdf,
-                "total_halaman": len(hasil_halaman),
-                "results": hasil_halaman
-            }, f, ensure_ascii=False, indent=2)
-        print(f"[DEBUG] 📄 File debug disimpan di: {debug_path}")
-    except Exception as e:
-        print(f"[ERROR] Gagal menyimpan file debug: {e}")
+    if not os.path.exists(filepath):
+        with open(filepath, 'wb') as f:
+            f.write(img_bytes)
+        print(f"[📸 PREVIEW DISIMPAN] {filename}")
+    else:
+        print(f"[📎 PREVIEW SUDAH ADA] {filename}")
+
+    return filename
+
+import json
 
 # Tambahkan ke app.py, ubah function process_file agar support multi-halaman hasil OCR
 @app.route('/api/process', methods=['POST'])
@@ -409,26 +496,22 @@ def process_file():
 
             thresh = preprocess_for_ocr(img_cv)
 
-            # Simpan preview image
-            preview_filename = f"{os.path.splitext(file.filename)[0]}_halaman_{halaman_ke}.jpg"
-            preview_path = os.path.join(UPLOAD_FOLDER, preview_filename)
-            cv2.imwrite(preview_path, thresh)
-            print(f"[📸 PREVIEW DISIMPAN] {preview_filename}")
-
-            raw_text = pytesseract.image_to_string(thresh, lang='ind', config='--psm 6')
-
+            preview_filename = simpan_preview_image(image, halaman_ke)
+            
+            raw_text = pytesseract.image_to_string(img_cv, lang='ind', config='--psm 6')
+            no_faktur, tanggal_obj = extract_faktur_tanggal(raw_text)
+            
             jenis_pajak, blok_rekanan, _ = extract_jenis_pajak(raw_text, nama_pt_utama)
             if not jenis_pajak:
                 hasil_semua_halaman.append({"error": f"Hal {halaman_ke}: Nama PT Utama tidak ditemukan."})
                 continue
 
             nama_rekanan, npwp_rekanan = extract_npwp_nama_rekanan(blok_rekanan)
-            no_faktur, tanggal_obj = extract_faktur_tanggal(raw_text)
             if not no_faktur or not tanggal_obj:
                 hasil_semua_halaman.append({"error": f"Hal {halaman_ke}: Tidak ditemukan tanggal/faktur"})
                 continue
 
-            dpp, dpp_str, override_ppn = extract_dpp(raw_text)
+            dpp, dpp_str, override_ppn, override_ppn_str = extract_dpp(raw_text)
             ppn, ppn_str = extract_ppn(raw_text, dpp, override_ppn)
             keterangan = extract_keterangan(raw_text)
 
@@ -467,6 +550,13 @@ def process_file():
                 f.write(raw_text)
 
             print(f"[✅ HALAMAN {halaman_ke}] Faktur: {no_faktur} | DPP: {dpp_str} | PPN: {ppn_str}")
+
+            preview_filename = f"preview_{os.path.splitext(file.filename)[0]}_hal_{halaman_ke}.jpg"
+            preview_path = os.path.join(UPLOAD_FOLDER, preview_filename)
+            cv2.imwrite(preview_path, thresh)
+
+            print("[DEBUG] Hasil halaman ke", halaman_ke)
+            print(json.dumps(hasil_semua_halaman[-1], indent=2, ensure_ascii=False))
 
         return jsonify({
             "success": True,

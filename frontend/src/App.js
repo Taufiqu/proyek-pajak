@@ -42,6 +42,12 @@ function App() {
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
 
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      if (!['pdf', 'png', 'jpg', 'jpeg'].includes(fileExt)) {
+        alert(`File "${file.name}" tidak didukung. Gunakan PDF atau gambar.`);
+        continue;
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('nama_pt_utama', ptUtama);
@@ -76,6 +82,9 @@ function App() {
             .forEach((r, idx) =>
               console.warn(`❌ Halaman error (${file.name}, Hal-${idx + 1}):`, r.error)
             );
+
+            console.log("🎯 Full response from backend:", result);
+            console.log("📦 Pages with data:", (result.results || []).filter(r => r.data));
         }
          else {
           alert(`Tidak ada hasil yang bisa ditampilkan dari file: ${file.name}`);
@@ -123,7 +132,12 @@ function App() {
 
       <div className="card">
         <h2>2. Upload Faktur PDF/Gambar</h2>
-        <input type="file" onChange={handleFileChange} accept=".pdf" multiple />
+        <input
+          type="file"
+          onChange={handleFileChange}
+          accept=".pdf,.png,.jpg,.jpeg"
+          multiple
+        />
         <button className="button" onClick={handleProcessBatch} disabled={loading}>
           {loading ? 'Sedang memproses...' : 'Proses Semua'}
         </button>
@@ -195,7 +209,7 @@ function App() {
                     value={currentForm.data.dpp}
                     onChange={(e) => updateCurrentField('dpp', e.target.value)}
                   />
-                  <small>Tampilan: {currentForm.data.formatted_dpp}</small>
+                  <small>Tampilan: {currentForm.data.formatted_dpp || "Rp 0,00"}</small>
                 </div>
                 <div className="form-group">
                   <label>PPN</label>
@@ -204,7 +218,7 @@ function App() {
                     value={currentForm.data.ppn}
                     onChange={(e) => updateCurrentField('ppn', e.target.value)}
                   />
-                  <small>Tampilan: {currentForm.data.formatted_ppn}</small>
+                  <small>Tampilan: {currentForm.data.formatted_ppn || "Rp 0,00"}</small>
                 </div>
                 <div className="form-group full-width">
                   <label>Keterangan</label>
@@ -229,18 +243,6 @@ function App() {
             </a>
           </div>
 
-          {currentForm.data.raw_ocr && (
-            <div className="form-group full-width">
-              <label>Hasil OCR Mentah</label>
-              <textarea
-                rows={6}
-                value={currentForm.data.raw_ocr}
-                readOnly
-                style={{ fontFamily: 'monospace', background: '#f9f9f9' }}
-              />
-            </div>
-          )}
-
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
             <button className="button" disabled={currentIndex === 0} onClick={() => setCurrentIndex(currentIndex - 1)}>
               ⬅️ Sebelumnya
@@ -250,6 +252,9 @@ function App() {
               Berikutnya ➡️
             </button>
           </div>
+          <pre style={{ textAlign: 'left', background: '#f0f0f0', padding: 10 }}>
+            {JSON.stringify(currentForm.data, null, 2)}
+          </pre>
         </div>
       )}
 
