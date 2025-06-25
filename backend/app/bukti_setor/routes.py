@@ -1,12 +1,21 @@
 import os
 import traceback
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, send_from_directory
 from datetime import datetime
 from ..models import BuktiSetor
 from .. import db
 from .utils import extract_bukti_setor_data
 
 bukti_setor_bp = Blueprint('bukti_setor', __name__, url_prefix='/api/bukti_setor')
+
+
+# --- ENDPOINT BARU UNTUK MENYAJIKAN FILE PREVIEW ---
+@bukti_setor_bp.route('/uploads/<path:filename>')
+def serve_preview(filename):
+    """Endpoint untuk menyajikan file preview dari folder upload."""
+    upload_folder = current_app.config['UPLOAD_FOLDER']
+    return send_from_directory(upload_folder, filename)
+
 
 @bukti_setor_bp.route('/process', methods=['POST'])
 def process_bukti_setor_endpoint():
@@ -26,6 +35,7 @@ def process_bukti_setor_endpoint():
         current_app.logger.error(f"Error processing bukti setor: {e}\n{traceback.format_exc()}")
         return jsonify(error=str(e)), 500
     finally:
+        # Menghapus file asli yang diunggah, file preview tetap ada.
         if os.path.exists(filepath):
             os.remove(filepath)
 

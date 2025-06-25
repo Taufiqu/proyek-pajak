@@ -16,3 +16,5 @@ class Config:
     # Paths
     POPPLER_PATH = os.environ.get('POPPLER_PATH')
     UPLOAD_FOLDER = 'uploads'
+    
+    UPLOAD_FOLDER = os.path.join(basedir, 'app', 'uploads')

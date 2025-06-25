@@ -71,14 +71,43 @@ const ValidationFormBuktiSetor = ({ initialData, onSave, isSaving }) => {
         setFormData(prev => ({...prev, [e.target.name]: e.target.value }));
     };
 
+    const previewUrl = formData.preview_filename 
+        ? `/api/bukti_setor/uploads/${formData.preview_filename}` 
+        : null;
+
     return (
         <div className="card result-card validation-card">
             <h3>Hasil Ekstraksi - Validasi Bukti Setor</h3>
-            <div className="validation-form">
-                <div className="form-group"><label>Kode Setor</label><input type="text" name="kode_setor" value={formData.kode_setor} onChange={handleChange} /></div>
-                <div className="form-group"><label>Tanggal</label><input type="date" name="tanggal" value={formData.tanggal} onChange={handleChange} /></div>
-                <div className="form-group"><label>Jumlah</label><input type="number" name="jumlah" value={formData.jumlah} onChange={handleChange} /><small>{formatRupiah(formData.jumlah)}</small></div>
+            
+            {/* --- PERUBAHAN STRUKTUR JSX DIMULAI DI SINI --- */}
+            <div className="validation-layout">
+                {previewUrl && (
+                    <div className="preview-container">
+                        <p className="preview-title">Preview Gambar</p>
+                        <img src={previewUrl} alt="Preview Bukti Setor" className="preview-image"/>
+                    </div>
+                )}
+                
+                <div className="validation-form-container">
+                    <div className="validation-form">
+                        <div className="form-group">
+                            <label>Kode Setor</label>
+                            <input type="text" name="kode_setor" value={formData.kode_setor || ''} onChange={handleChange} />
+                        </div>
+                        <div className="form-group">
+                            <label>Tanggal</label>
+                            <input type="date" name="tanggal" value={formData.tanggal || ''} onChange={handleChange} />
+                        </div>
+                        <div className="form-group">
+                            <label>Jumlah</label>
+                            <input type="number" name="jumlah" value={formData.jumlah || ''} onChange={handleChange} />
+                            <small>{formatRupiah(formData.jumlah)}</small>
+                        </div>
+                    </div>
+                </div>
             </div>
+            {/* --- PERUBAHAN STRUKTUR JSX SELESAI --- */}
+
             <button className="button save-button" onClick={() => onSave(formData)} disabled={isSaving}>
                 {isSaving ? 'Menyimpan...' : 'Konfirmasi & Simpan'}
             </button>

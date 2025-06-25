@@ -7,6 +7,10 @@ import easyocr
 from thefuzz import process as fuzz_process
 import textdistance
 from spellchecker import SpellChecker
+import os
+import hashlib
+from io import BytesIO
+from PIL import Image
 
 # Inisialisasi reader EasyOCR dan kamus Indonesia
 try:
@@ -19,6 +23,41 @@ except Exception as e:
 
 spell = SpellChecker(language=None, case_sensitive=False)
 spell.word_frequency.load_text_file("D:/WEB KP/proyek-pajak/backend/app/bukti_setor/kamus_indonesia.txt")
+
+
+# --- FUNGSI BARU UNTUK MENYIMPAN PREVIEW ---
+def simpan_preview_image(pil_image, upload_folder):
+    """
+    Mengonversi gambar PIL ke JPG, menghasilkan nama unik via hash, 
+    dan menyimpannya ke disk. Mengembalikan nama file yang disimpan.
+    """
+    try:
+        # Konversi ke RGB untuk konsistensi, terutama dari gambar Grayscale/RGBA
+        pil_image = pil_image.convert("RGB")
+        
+        # Simpan gambar ke buffer di memori
+        buffer = BytesIO()
+        pil_image.save(buffer, format="JPEG", quality=85) # Kualitas 85 cukup baik untuk preview
+        img_bytes = buffer.getvalue()
+        
+        # Buat hash unik dari konten gambar untuk nama file
+        img_hash = hashlib.md5(img_bytes).hexdigest()
+        filename = f"preview_{img_hash}.jpg"
+        filepath = os.path.join(upload_folder, filename)
+
+        # Hanya simpan jika file belum ada untuk menghindari duplikasi
+        if not os.path.exists(filepath):
+            with open(filepath, "wb") as f:
+                f.write(img_bytes)
+            print(f"[📸 PREVIEW DISIMPAN] {filename}")
+        else:
+            print(f"[📎 PREVIEW SUDAH ADA] {filename}")
+            
+        return filename
+    except Exception as e:
+        print(f"[❌ ERROR SIMPAN PREVIEW] {e}")
+        return None
+
 
 def preprocess_for_ocr(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -67,17 +106,27 @@ def correct_spelling(text):
 
 def extract_bukti_setor_data(filepath, poppler_path):
     from flask import current_app
+    upload_folder = current_app.config['UPLOAD_FOLDER']
 
     if not ocr_reader:
         raise ConnectionError("EasyOCR reader tidak berhasil diinisialisasi.")
 
+    preview_filename = None
+    
     if filepath.lower().endswith('.pdf'):
         images = convert_from_path(filepath, poppler_path=poppler_path, first_page=1, last_page=1)
         if not images: raise ValueError("Gagal mengonversi PDF.")
-        img_cv = cv2.cvtColor(np.array(images[0]), cv2.COLOR_RGB2BGR)
+        
+        pil_image_from_pdf = images[0]
+        preview_filename = simpan_preview_image(pil_image_from_pdf, upload_folder)
+        img_cv = cv2.cvtColor(np.array(pil_image_from_pdf), cv2.COLOR_RGB2BGR)
     else:
         img_cv = cv2.imread(filepath)
         if img_cv is None: raise ValueError("Format gambar tidak didukung.")
+
+        # Konversi dari format OpenCV (BGR) ke PIL (RGB)
+        pil_image_from_cv = Image.fromarray(cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB))
+        preview_filename = simpan_preview_image(pil_image_from_cv, upload_folder)
 
     processed_img = preprocess_for_ocr(img_cv)
     ocr_results = ocr_reader.readtext(processed_img, detail=1, paragraph=False)
@@ -170,5 +219,6 @@ def extract_bukti_setor_data(filepath, poppler_path):
     return {
         "kode_setor": kode_setor,
         "jumlah": jumlah,
-        "tanggal": tanggal_obj.isoformat() if tanggal_obj else None
+        "tanggal": tanggal_obj.isoformat() if tanggal_obj else None,
+        "preview_filename": preview_filename
     }
