@@ -1,30 +1,72 @@
-# Abaikan lingkungan virtual
-venv/
-.env
-
-# Abaikan file OS & IDE
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.swp
 .DS_Store
-*.log
+Thumbs.db
+ehthumbs.db
 
-# Abaikan file bawaan editor
-.vscode/
+# Abaikan file konfigurasi editor kode
 .idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
 
-# Abaikan PDF dan file upload hasil testing
-uploads/
-*.pdf
+# Abaikan file log
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Abaikan file node modules kalau kamu pakai React
-node_modules/
-build/
-dist/
 
-# Abaikan file konfigurasi lokal
-*.db
+# =================================================
+# BAGIAN BACKEND (PYTHON & FLASK)
+# =================================================
+
+# Abaikan folder virtual environment
+# Ini sangat penting karena ukurannya besar dan spesifik untuk setiap mesin
+venv/
+/backend/venv/
+
+# Abaikan file cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Abaikan folder yang berisi file unggahan pengguna
+# Folder ini bersifat sementara dan tidak boleh dimasukkan ke dalam kode sumber
+/backend/uploads/
+
+# Abaikan file environment yang berisi kredensial dan data sensitif
+# KESALAHAN PALING FATAL adalah meng-commit file .env ke Git
+.env
+/backend/.env
+
+# Abaikan file database lokal (jika menggunakan SQLite)
 *.sqlite3
-.env.*
+*.db
+
+
+# =================================================
+# BAGIAN FRONTEND (REACT & NODE.JS)
+# =================================================
+
+# Abaikan folder dependensi Node.js
+# INI YANG PALING PENTING untuk mempercepat push/pull.
+# Folder ini bisa berukuran ratusan MB dan bisa dibuat ulang dengan `npm install`.
+/frontend/node_modules/
+node_modules/
+
+# Abaikan folder hasil build produksi
+# Folder ini dibuat secara otomatis saat menjalankan `npm run build`
+/frontend/build/
+build/
+
+# Abaikan file environment lokal
+# Sama seperti .env di backend, ini berisi kunci API atau konfigurasi lokal
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Abaikan laporan cakupan tes
+coverage/
+
+# Abaikan file yang dibuat oleh Create React App
+.eslintcache

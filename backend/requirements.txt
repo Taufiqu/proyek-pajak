@@ -1,0 +1,14 @@
+# backend/requirements.txt
+Flask
+Flask-SQLAlchemy
+Flask-Cors
+psycopg2-binary
+python-dotenv
+Pillow
+pdf2image
+opencv-python-headless
+pytesseract
+thefuzz
+imutils
+pandas
+openpyxl
