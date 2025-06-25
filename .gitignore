@@ -1,30 +1,33 @@
-# Abaikan lingkungan virtual
-venv/
+# ==== ENVIRONMENT FILES ====
 .env
+.env.*
+venv/
 
-# Abaikan file OS & IDE
+# ==== PYTHON CACHE ====
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 *.swp
-.DS_Store
-*.log
 
-# Abaikan file bawaan editor
-.vscode/
-.idea/
-
-# Abaikan PDF dan file upload hasil testing
-uploads/
-*.pdf
-
-# Abaikan file node modules kalau kamu pakai React
+# ==== NODE / JAVASCRIPT ====
 node_modules/
 build/
 dist/
 
-# Abaikan file konfigurasi lokal
+# ==== DATABASE / LOG FILES ====
+*.log
 *.db
 *.sqlite3
-.env.*
+
+# ==== OS JUNK ====
+.DS_Store
+Thumbs.db
+
+# ==== EDITOR / IDE ====
+.vscode/
+.idea/
+
+# ==== UPLOADS / TEST OUTPUT ====
+uploads/
+*.pdf
