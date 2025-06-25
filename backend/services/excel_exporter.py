@@ -55,7 +55,10 @@ def generate_excel_export(db):
                 print(f"[ERROR] Gagal serialize row ID={r.id}: {e}")
 
         # Load template
-        template_path = os.path.join(os.getcwd(), "rekap_template.xlsx")
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        template_path = os.path.join(BASE_DIR, "..", "templates", "rekap_template.xlsx")
+        template_path = os.path.normpath(template_path)
+
         wb = load_workbook(template_path)
         ws = wb.active
 

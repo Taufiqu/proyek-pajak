@@ -6,10 +6,10 @@ python-dotenv==1.0.1
 
 pytesseract==0.3.10
 opencv-python==4.9.0.80
+numpy==1.26.4
 Pillow==10.2.0
 pdf2image==1.16.3
-thefuzz==0.22.1
 openpyxl==3.1.2
+thefuzz==0.22.1
 pandas==2.2.1
-
-psycopg2-binary==2.9.9  # <--- Penting untuk koneksi PostgreSQL
+psycopg2-binary==2.9.9
