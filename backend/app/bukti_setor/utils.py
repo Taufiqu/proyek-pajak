@@ -6,8 +6,9 @@ from pdf2image import convert_from_path
 import easyocr
 from thefuzz import process as fuzz_process
 import textdistance
+from spellchecker import SpellChecker
 
-# Inisialisasi reader EasyOCR
+# Inisialisasi reader EasyOCR dan kamus Indonesia
 try:
     print("Inisialisasi EasyOCR Reader...")
     ocr_reader = easyocr.Reader(['id', 'en'], gpu=False)
@@ -15,6 +16,9 @@ try:
 except Exception as e:
     print(f"Error initializing EasyOCR: {e}")
     ocr_reader = None
+
+spell = SpellChecker(language=None, case_sensitive=False)
+spell.word_frequency.load_text_file("D:/WEB KP/proyek-pajak/backend/app/bukti_setor/kamus_indonesia.txt")
 
 def preprocess_for_ocr(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -47,7 +51,7 @@ def fuzzy_month_match(input_month, all_months):
         if score > best_score:
             best = m
             best_score = score
-    return best if best_score > 0.7 else None
+    return best if best_score > 0.6 else None
 
 def fuzzy_search_nearby(text_blocks, keyword, pattern):
     for i, block in enumerate(text_blocks):
@@ -57,6 +61,9 @@ def fuzzy_search_nearby(text_blocks, keyword, pattern):
                 if match:
                     return match.group()
     return None
+
+def correct_spelling(text):
+    return ' '.join([spell.correction(w) if w not in spell and spell.correction(w) else w for w in text.split()])
 
 def extract_bukti_setor_data(filepath, poppler_path):
     from flask import current_app
@@ -78,7 +85,7 @@ def extract_bukti_setor_data(filepath, poppler_path):
     full_text_for_logging = " ".join([res[1] for res in ocr_results])
     current_app.logger.info(f"--- EasyOCR Full Text ---\n{full_text_for_logging}\n--------------------")
 
-    all_text_blocks = [res[1].lower() for res in ocr_results]
+    all_text_blocks = [correct_spelling(res[1].lower()) for res in ocr_results]
     full_text_str = " ".join(all_text_blocks)
 
     # KODE SETOR
@@ -155,8 +162,10 @@ def extract_bukti_setor_data(filepath, poppler_path):
                     candidate_values.append(value)
 
     if candidate_values:
-        jumlah = max(candidate_values)
-        current_app.logger.info(f"Kandidat akhir jumlah: {candidate_values}. Dipilih nilai terbesar: {jumlah}")
+        valid_candidates = [v for v in candidate_values if v > 10000]
+        current_app.logger.info(f"Semua kandidat jumlah ditemukan: {candidate_values}")
+        jumlah = max(valid_candidates) if valid_candidates else max(candidate_values)
+        current_app.logger.info(f"Jumlah final dipilih: {jumlah}")
 
     return {
         "kode_setor": kode_setor,
