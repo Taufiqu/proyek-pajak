@@ -223,3 +223,18 @@ input[type="file"] {
 .export-button:hover {
   background-color: #219150;
 }
+
+/* Gaya untuk input yang memerlukan perhatian khusus */
+.input-warning {
+  border: 1px solid #ff4d4f; /* Border merah untuk menarik perhatian */
+  background-color: #fff1f0;  /* Background merah muda lembut */
+}
+
+/* Gaya untuk teks pesan peringatan */
+.warning-text {
+  color: #d9363e; /* Warna teks merah tua */
+  font-weight: bold;
+  display: block; /* Pastikan teks muncul di baris baru */
+  margin-top: 5px;
+  text-align: left; /* Rata kiri agar rapi */
+}

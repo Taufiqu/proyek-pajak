@@ -99,16 +99,35 @@ function App() {
   };
 
   const handleSave = async () => {
-    const response = await fetch(`${API_URL}/api/save`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        klasifikasi: formPages[currentIndex].klasifikasi,
-        data: formPages[currentIndex].data
-      })
-    });
-    const res = await response.json();
-    alert(res.message || 'Sukses simpan!');
+    // 1. Bungkus semua logika dengan blok try...catch
+    try {
+      const response = await fetch(`${API_URL}/api/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          klasifikasi: formPages[currentIndex].klasifikasi,
+          data: formPages[currentIndex].data,
+        }),
+      });
+
+      // 2. Periksa apakah respons TIDAK sukses (status bukan 2xx)
+      if (!response.ok) {
+        // Ambil pesan error dari body JSON yang dikirim backend
+        const errData = await response.json(); 
+        // Lemparkan error agar ditangkap oleh blok catch di bawah
+        throw new Error(errData.error || `Terjadi kesalahan: ${response.statusText}`);
+      }
+
+      // Kode ini hanya akan berjalan jika respons sukses
+      const res = await response.json();
+      alert(res.message || 'Data berhasil disimpan!');
+
+    } catch (error) {
+      // 4. Tangkap semua error (baik dari 'throw' di atas maupun error jaringan)
+      console.error("Gagal menyimpan data:", error);
+      // Tampilkan pesan error yang sebenarnya kepada pengguna
+      alert(`Gagal menyimpan: ${error.message}`);
+    }
   };
 
   const currentForm = formPages[currentIndex];
@@ -184,7 +203,15 @@ function App() {
                     type="date"
                     value={currentForm.data.tanggal}
                     onChange={(e) => updateCurrentField('tanggal', e.target.value)}
+                    // UBAH KONDISI: Terapkan gaya jika field tanggal kosong
+                    className={!currentForm.data.tanggal ? 'input-warning' : ''}
                   />
+                  {/* UBAH KONDISI: Tampilkan pesan jika field tanggal kosong */}
+                  {!currentForm.data.tanggal && (
+                    <small className="warning-text">
+                      ⚠️ Tanggal wajib diisi sebelum menyimpan.
+                    </small>
+                  )}
                 </div>
                 <div className="form-group">
                   <label>NPWP</label>

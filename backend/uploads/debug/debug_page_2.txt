@@ -1,30 +1,28 @@
-| Faktur Pajak V) INI
-Kode dan Nomor Seri Faktur Pajak : 010.005-24.49874858
+Kode dan Nomor Seri Faktur Pajak : 010.005-24.49874859 |
 Pengusaha Kena Pajak
 Nama : PT MULTI INTAN PERKASA
-Alamat : PERUM RAGOM GAWI PERMAI II, BLOK F, NO.15, LK II RT 07 RW 00, RAJABASA PEMUKA. KOTA
-BANDAR LAMPUNG |
+Alamat : PERUM RAGOM GAWI PERMAI II, BLOK F, NO.15, LK II RT 07 Rw 00, RAJABASA PEMUKA , KOTA
+BANDAR LAMPUNG
 NPWP : 926529900323000 / 0926529900323000
-NITKU : 0926529900323000000000
+KU : 0926529900323000000000)
 Pembeli Barang Kena Pajak / Penerima Jasa Kena Pajak
-Nama . PT. PERKEBUNAN NUSANTARA |
-Alamat GEDUNG AGRO PLAZA, JALAN HR RASUNA SAID KAVLING X2, 1 Blok -- No.-- RT.000 RW.000
-Kel. KUNINGAN TIMUR Kec.SETIA BUDI Kota/Kab.JAKARTA SELATAN DKI JAKARTA 12950
-NPWP : 010000032051000 / 0010000032051000
-NITKU : 0010000032051000000000
-Nama Barang Kena Pajak / Jasa Kena Pajak Harga Kah enggantan/ Uang
-Pekerjaan Pembuatan 24 Unit Alas SW Keb. Di Kebun Padang Pelawi PT.
-4 Perkebunan Nusantara IV Reg. 7 Ses. SPK No: TNP/TL/SPK/0459/2024 Tgl 151.000.000.00
-10/09/2024
-Ip UDO.0UU x
-Harga Jual / Penggantian 151.000.000,60
-“Dikurangi Uang Muka 0
-Dasar Pengenaan Pajak 136.036.036,00
-Total PPnBM (Pajak Penjualan Barang Mewah) a00
+Nama : PT. PERKEBUNAN NUSANTARA IV
+Alamat : GEDUNG AGRO PLAZA LANTAI 8 JL.HR RASUNA SAID KAVLING Blok X2 No.01 RT:007 Rw-:oo4
+Kel. KUNINGAN Kec.TIMUR Kota/Kab.SETIABUDI DKI JAKARTA 00000
+NPWP : 010611291051000 / 0010611291051000
+NITKU : 0010611291051000000000
+Nama Barang Kena Pajak / Jasa Kena Pajak Harga Jual/Penggantian/Uang
+Muka/Termin
+Pengadaan & Pemasangan Decanter Kapasitas 25 M3/Jam Keb. Di Kebun
+Betung PT. Perkebunan Nusantara IV Regional 7 Ses. SPK No : RO7H-
+RO/KTR/2024.04.25-1 Tgl 25/04/2024 3.157.064.754,00
+XD 2. 04 4X
+Harga Jual / Penggantian 3.157.064.754,00
+Dikurangi Uang Muka 000
+Dasar Pengenaan Pajak 2.844.202.481,00
+Total PPnBM (Pajak Penjualan Barang Mewah) 20
 Sesuai dengan ketentuan yang berlaku, Direktorat Jenderal Pajak mengatur bahwa Faktur Pajak ini telah ditandatangani
-secara elektronik sehingaa tidak diperlukan tanda tangan basah pada Faktur Pajak ini.
-. KOTA BANDAR LAMPUNG, 28 Oktober 2024
-Dena sd
-ok » 0 ang
-Oa. BUDIONO
-KEBUN PADANG PELAWI
+secara elektronik sehingga tidak diperlukan tanda tangan basah pada Faktur Pajak ini.
+an si fa) KOTA BANDAR LAMPUNG, 04 November 2024
+iii BUDIONO ,
+KEBUN BETUNG Ti R3
