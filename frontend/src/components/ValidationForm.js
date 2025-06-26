@@ -1,18 +1,5 @@
 import React from "react";
 
-const formatRupiah = (number) => {
-  // Jika nilai tidak valid atau kosong, kembalikan string kosong
-  if (isNaN(number) || number === null || number === "") {
-    return "";
-  }
-  // 'id-ID' untuk format Indonesia, 'IDR' untuk mata uang Rupiah
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0, // Tidak menampilkan angka di belakang koma
-  }).format(number);
-};
-
 const ValidationForm = ({ data, updateData }) => {
   if (!data) return null;
 
@@ -20,11 +7,19 @@ const ValidationForm = ({ data, updateData }) => {
     updateData({ [field]: value });
   };
 
+  const parseRupiahToInt = (str) => {
+    if (!str) return 0;
+    return parseInt(str.replace(/[^0-9]/g, ""), 10) || 0;
+  };
+      
+  const formatRupiah = (number) => {
+    if (typeof number === "string") number = parseInt(number.replace(/\D/g, ""), 10) || 0;
+    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(number);
+  };
+
   const handleCurrencyChange = (field, value) => {
-    // Hapus semua karakter non-digit dari input (misal: "Rp 10.000" -> "10000")
-    const numericValue = value.replace(/[^0-9]/g, "");
-    // Update state dengan nilai numerik, atau 0 jika kosong
-    updateData({ [field]: numericValue === "" ? "" : parseInt(numericValue, 10) });
+    const cleanValue = parseRupiahToInt(value); // konversi dari string ke number
+    updateData({ [field]: cleanValue });
   };
 
   return (

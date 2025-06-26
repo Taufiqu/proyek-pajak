@@ -172,8 +172,14 @@ body::before {
 /* ==========================================================================
    5. TOMBOL (BUTTONS)
    ========================================================================== */
+/* ==========================================================================
+   5. TOMBOL (BUTTONS)
+   ========================================================================== */
 .button, button {
+  /* JADIKAN WARNA UTAMA SEBAGAI DEFAULT UNTUK SEMUA TOMBOL AKTIF */
+  background-color: var(--primary);
   color: white;
+  
   border: none;
   padding: 0.7rem 1.4rem;
   border-radius: 5px;
@@ -182,20 +188,25 @@ body::before {
   font-weight: bold;
   transition: background-color 0.3s, opacity 0.3s;
   margin: 0.5rem;
-  text-decoration: none; /* Untuk tombol yang berupa link <a> */
-  display: inline-block; /* Untuk tombol yang berupa link <a> */
+  text-decoration: none;
+  display: inline-block;
 }
 
+/* Aturan untuk hover pada tombol yang aktif */
 button:hover:not(:disabled), .button:hover:not(:disabled) {
   opacity: 0.9;
 }
 
+/* GANTI WARNA DISABLED MENJADI LEBIH PUCAT */
 button:disabled, .button:disabled {
-  background-color: #bdc3c7;
+  background-color: #e0e0e0; /* Warna abu-abu sangat terang */
+  color: #a0a0a0; /* Warna teks lebih redup */
   cursor: not-allowed;
+  opacity: 1; /* Hapus efek hover jika ada */
 }
 
 /* Tombol utama (gelap, sesuai warna primer) */
+/* Aturan ini bisa dihapus karena sudah menjadi default, tapi boleh disimpan untuk kejelasan */
 .button-primary {
   background-color: var(--primary);
   color: white;
@@ -246,6 +257,7 @@ thead th {
 tbody td {
   border-top: 1px solid #ddd;
   padding: 0.8rem;
+  background-color: #ddd;
 }
 
 

@@ -43,17 +43,24 @@ def process_file():
 
 @app.route("/api/save", methods=["POST"])
 def save_data():
+    if not request.is_json:
+        return jsonify(error="Request harus berupa JSON."), 400
+
     data = request.get_json()
 
     try:
         if isinstance(data, list):
+            saved_count = 0
             for item in data:
                 save_invoice_data(item, db)
+                saved_count += 1
+            db.session.commit()
+            return jsonify(message=f"{saved_count} faktur berhasil disimpan."), 201
+
         else:
             save_invoice_data(data, db)
-
-        db.session.commit()
-        return jsonify(message="Data berhasil disimpan ke database!"), 201
+            db.session.commit()
+            return jsonify(message="Faktur berhasil disimpan."), 201
 
     except ValueError as ve:
         db.session.rollback()

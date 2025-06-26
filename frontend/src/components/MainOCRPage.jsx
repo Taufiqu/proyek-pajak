@@ -82,19 +82,57 @@ function App() {
 
   const handleSave = async () => {
     try {
+      if (!formPages.length) {
+        toast.error("Tidak ada halaman untuk disimpan.");
+        return;
+      }
+
       const currentPage = formPages[currentIndex];
+      const parseRupiahToInt = (val) => {
+        if (typeof val === "number") return val;
+        if (typeof val === "string") {
+          return parseInt(val.replace(/[^0-9]/g, ""), 10) || 0;
+        }
+        return 0;
+      };
+
+      if (!currentPage || !currentPage.data) {
+        toast.error("Halaman kosong atau data tidak lengkap.");
+        return;
+      }
+
+      const payload = {
+        no_faktur: currentPage.data.no_faktur,
+        tanggal: currentPage.data.tanggal,
+        npwp_lawan_transaksi: currentPage.data.npwp_lawan_transaksi,
+        nama_lawan_transaksi: currentPage.data.nama_lawan_transaksi,
+        keterangan: currentPage.data.keterangan,
+        dpp: parseRupiahToInt(currentPage.data.dpp),
+        ppn: parseRupiahToInt(currentPage.data.ppn)
+      };
+      
+      console.log("📦 Payload yang dikirim:", payload);
+      console.log("📦 JSON stringified:", JSON.stringify(payload));
+
       const response = await fetch(`${API_URL}/api/save`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(currentPage.data),
+        body: JSON.stringify(payload),
       });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("❌ RESPONSE TEXT:", errText);
+        toast.error("Gagal menyimpan. Cek console.");
+        return;
+      }
 
       const result = await response.json();
       toast.success(result.message || "Data berhasil disimpan!");
-      } catch (err) {
-      console.error("Save all error:", err);
+    } catch (err) {
+      console.error("Save error:", err);
       toast.error("Gagal menyimpan data.");
     }
   };
@@ -118,14 +156,21 @@ function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formPages.map((page) => page.data)),
+        body: JSON.stringify(formPages.map((page) => page.data)), // 💡 FIX
       });
 
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("❌ RESPONSE TEXT:", errText);
+        toast.error("Gagal menyimpan semua data.");
+        return;
+      }
+
       const result = await response.json();
-      toast.success(result.message || "Berhasil menyimpan semua data!");
+      toast.success(result.message || "Berhasil simpan semua data!");
     } catch (err) {
       console.error("Save all error:", err);
-      toast.error("Gagal menyimpan semua data.");
+      toast.error("Gagal menyimpan semua data (exception).");
     }
   };
 
