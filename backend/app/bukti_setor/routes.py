@@ -8,7 +8,6 @@ from .utils import extract_bukti_setor_data
 
 bukti_setor_bp = Blueprint('bukti_setor', __name__, url_prefix='/api/bukti_setor')
 
-
 # --- ENDPOINT BARU UNTUK MENYAJIKAN FILE PREVIEW ---
 @bukti_setor_bp.route('/uploads/<path:filename>')
 def serve_preview(filename):
@@ -49,8 +48,8 @@ def save_bukti_setor_endpoint():
     if not all([kode_setor, tanggal, jumlah]):
         return jsonify(error="Field tidak lengkap"), 400
 
-    if db.session.execute(db.select(BuktiSetor).filter_by(kode_setor=kode_setor)).scalar_one_or_none():
-        return jsonify(error=f"Bukti setor dengan kode '{kode_setor}' sudah ada."), 409
+    # if db.session.execute(db.select(BuktiSetor).filter_by(kode_setor=kode_setor)).scalar_one_or_none():
+    #     return jsonify(error=f"Bukti setor dengan kode '{kode_setor}' sudah ada."), 409
 
     try:
         tanggal_obj = datetime.strptime(tanggal, '%Y-%m-%d').date()

@@ -3,7 +3,7 @@
 import io
 import pandas as pd
 from datetime import datetime
-from flask import Blueprint, jsonify, send_file
+from flask import Blueprint, jsonify, send_file, request
 from ..models import PpnMasukan, PpnKeluaran, BuktiSetor
 from .. import db
 
@@ -21,7 +21,7 @@ def get_laporan(jenis_pajak):
     elif jenis_pajak == 'bukti_setor':
         records = db.session.execute(db.select(BuktiSetor).order_by(BuktiSetor.tanggal.desc())).scalars()
         data = [{"id": r.id, "tanggal": r.tanggal.strftime('%Y-%m-%d'), "kode_setor": r.kode_setor, "jumlah": float(r.jumlah)} for r in records]
-    
+
     return jsonify(data)
 
 @laporan_bp.route('/export/<jenis_pajak>', methods=['GET'])
@@ -35,7 +35,6 @@ def export_laporan(jenis_pajak):
     if not query:
         return "Tidak ada data untuk diekspor", 404
 
-    # Konversi data ke DataFrame
     df_data = [
         {key: (float(value) if isinstance(value, db.Numeric) else value) for key, value in r.__dict__.items() if not key.startswith('_')}
         for r in query
@@ -46,10 +45,26 @@ def export_laporan(jenis_pajak):
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='Laporan')
     output.seek(0)
-    
+
     return send_file(
         output,
         as_attachment=True,
         download_name=f'laporan_{jenis_pajak}_{datetime.now().strftime("%Y%m%d")}.xlsx',
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
+@laporan_bp.route('/<jenis_pajak>', methods=['DELETE'])
+def delete_selected(jenis_pajak):
+    model_map = {'ppn_masukan': PpnMasukan, 'ppn_keluaran': PpnKeluaran, 'bukti_setor': BuktiSetor}
+    if jenis_pajak not in model_map:
+        return jsonify({"error": "Jenis pajak tidak valid"}), 400
+
+    Model = model_map[jenis_pajak]
+    ids = request.json.get('ids', [])
+    if not ids:
+        return jsonify({"error": "Tidak ada ID yang dikirim"}), 400
+
+    db.session.query(Model).filter(Model.id.in_(ids)).delete(synchronize_session=False)
+    db.session.commit()
+
+    return jsonify({"message": f"{len(ids)} data berhasil dihapus."})

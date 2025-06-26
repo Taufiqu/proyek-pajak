@@ -1,47 +1,50 @@
-# backend/app/__init__.py
 import os
 import logging
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from config import Config
+from flask_migrate import Migrate
 
-# Inisialisasi ekstensi
+# 1. Inisialisasi ekstensi di scope global (sudah benar)
 db = SQLAlchemy()
+migrate = Migrate()
 
 def create_app(config_class=Config):
     """Factory function untuk membuat instance aplikasi Flask."""
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # 2. Inisialisasi ekstensi dengan aplikasi (sudah benar)
+    db.init_app(app)
+    migrate.init_app(app, db)
+    
+    # Inisialisasi CORS lebih awal
+    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+
     # Setup Logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - [%(levelname)s] - %(message)s')
 
-    # Inisialisasi ekstensi dengan aplikasi
-    db.init_app(app)
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+    # 3. Kelompokkan semua registrasi blueprint di satu tempat
+    with app.app_context():
+        # Import semua blueprint yang dibutuhkan
+        from .bukti_setor.routes import bukti_setor_bp
+        from .faktur.routes import faktur_bp      # Asumsi Anda punya file ini
+        from .laporan.routes import laporan_bp    # Asumsi Anda punya file ini
 
-    # Pastikan folder upload ada
-    upload_folder = app.config['UPLOAD_FOLDER']
-    if not os.path.exists(upload_folder):
+        # Daftarkan setiap blueprint HANYA SATU KALI
+        app.register_blueprint(bukti_setor_bp)
+        app.register_blueprint(faktur_bp)
+        app.register_blueprint(laporan_bp)
+        
+        app.logger.info("Semua blueprints telah diregistrasi.")
+
+    # 4. HAPUS 'db.create_all()'. Tanggung jawab ini sekarang milik Flask-Migrate.
+    
+    # 5. Pastikan folder upload ada (sudah benar)
+    upload_folder = app.config.get('UPLOAD_FOLDER')
+    if upload_folder and not os.path.exists(upload_folder):
         os.makedirs(upload_folder)
         app.logger.info(f"Folder '{upload_folder}' telah dibuat.")
-
-
-    # --- Registrasi Blueprints ---
-    from .faktur.routes import faktur_bp
-    from .bukti_setor.routes import bukti_setor_bp
-    from .laporan.routes import laporan_bp
-
-    app.register_blueprint(faktur_bp)
-    app.register_blueprint(bukti_setor_bp)
-    app.register_blueprint(laporan_bp)
-    
-    app.logger.info("Semua blueprints telah diregistrasi.")
-
-    with app.app_context():
-        # Buat semua tabel database jika belum ada
-        db.create_all()
-        app.logger.info("Struktur database telah diperiksa/dibuat.")
 
     return app
