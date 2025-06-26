@@ -43,7 +43,26 @@ def process_file():
 
 @app.route("/api/save", methods=["POST"])
 def save_data():
-    return save_invoice_data(request, db)
+    data = request.get_json()
+
+    try:
+        if isinstance(data, list):
+            for item in data:
+                save_invoice_data(item, db)
+        else:
+            save_invoice_data(data, db)
+
+        db.session.commit()
+        return jsonify(message="Data berhasil disimpan ke database!"), 201
+
+    except ValueError as ve:
+        db.session.rollback()
+        return jsonify(error=str(ve)), 400
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"[❌ ERROR /api/save] {e}")
+        return jsonify(error=f"Terjadi kesalahan di server: {e}"), 500
 
 @app.route("/api/export", methods=["GET"])
 def export_excel():

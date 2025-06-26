@@ -1,33 +1,32 @@
-“ Faktur Pajak” '£
-Kode dan Nomor Seri Faktur Pajak : 010.011-24.26201842
-Pengusaha Kena Pajak
-Nama : PT MITRA ENGGAL MANDIRI
-Alamat : BIZPOINT BUSINESS PARK BLOK J NO 33 , KAB. TANGERANG
-NPWP : 947945432741000 / 0947945432741000
-NITKU : 0947945432741000000000
-Pembeli Barang Kena Pajak / Penerima Jasa Kena Pajak |
-Nama : PT MULTI INTAN PERKASA
-Alamat : PERUM RAGOM GAWI PERMAI II Blok F No.15 LK II RT:000 RW:000 Kel.RAJABASA PRAMUKA
-Kec.RAJABASA Kota/Kab.KOTA BANDAR LAMPUNG LAMPUNG 00000
-NPWP : 926529900323000 / 0926529900323000
-NITKU : 0926529900323000000000
-Harga Jual/Penggantian/Uan
-0 Nama Barang Kena Pajak / Jasa Kena Pajak 1 maan me 1 |
-DECANTER & DESANDING CYLONE (SPESIFIKASI SESUAI
-1 PERMINTAAN) 3.550.000.000,00
-Rp 3.550.000.000 x 1
-Ea MATERIAL INSTALASI (SPESIFIKASI SESUAI PERMINTAAN) 6 350.000.000,00
-Rp 950.000.000 x 1 ea NPNAN
-| Rp 300.000.000 x 1 TE LARI
-| Uang Muka / Termin 250.000.000,00
-Dikurangi Uang Muka IM)
-Dasar Pengenaan Pajak 250.000.000,00
-Total PPN 27.500.000,00
-Total PPnBM (Pajak Penjualan Barang Mewah) Po 900
-Sesuai dengan ketentuan yang berlaku, Direktorat Jenderal Pajak mengatur bahwa Faktur Pajak ini telah ditandatangani
-secara elektronik sehingga tidak diperlukan tanda tangan basah pada Faktur Pajak ini.
-paten KAB. TANGERANG, 15 Desember 2024
-3 Ogan «Ka,
-Lt 26 1 21 pake
-2 Parredti SUGIRI
-NO INVOICE 5-1124151MIO-4-RO Ka "3
+an as, un TVNGAUS Mn Tn Ba aa Sh |
+mn Pu Lk T— Be an “1 |
+| Kode dan Nomor Seri Faktur Pajak : 010.005-24,49874853 | Sa NA
+Pengusaha Kena Pajak tan gm. TT '
+Nama : PT MULTI INTANPERKASA AN an aa Mn aa Ban DEL
+: Alamat : PERUM RAGOM GAWI PERMAI II, BLOK F, NO.15, LK II RT 07 RW 00, RAJABASA PEMUKA , Koma 3 MN
+2: BANDAR LAMPUNG — Ma am ET
+2 Pembeli Barang Kena Pajak / Penerima Jasa Kena Pajak So
+5 Nama : PT. PERKEBUNAN NUSANTARA TV ”—n
+TI Alamat : GEDUNG AGRO PLAZA LANTAI 8 JL.HR RASUNA SAID KAVLING Blok X2 No.01 RT:007 RW:004 | 1 “3
+Kel.KUNINGAN Kec.TIMUR Kota/Kab.SETIABUDI DKI JAKARTA 00000 8
+NPWP : 01.061.129.1-051.000 T
+: , Harga Jual/Penggantian/Uang | |
+ha Nama Barang Kena Pajak / Jasa Kena Pajak Muka/Termin '
+Pekerjaan Pembuatan 1 (satu) Unit Menara Pantau Keb. Di Unit Sungai ! pas
+Lengi PT. Perkebunan Nusantara IV Regional 7 Ses. SPK No: at
+| RO7H/KTR/2024.04.19-4 Tgl 19/04/2024 pap ni NI
+Harga Jual / Penggantian 268.057.304,00 |
+Dikurangi Uang Muka | 5
+1 Dasar Pengenaan Pajak 241.493.067,00 |
+Total PPN 26.564.237,00 E
+4 Total PPnBM (Pajak Penjualan Barang Mewah) : | 5 Tea 3
+: Sesuai dengan ketentuan yang berlaku, Direktorat Jenderal Pajak mengatur bahwa Faktur Pajak ini telah ditandatangani secara elektronik sehingga Ea
+: tidak dipedukan tanda tangan basah pada Faktur Pajak ini. ja.
+3 2 sapa KOTA BANDAR LAMPUNG, 01 Juli 2024 (—
+2 f Pp ak” 1 | $
+Ie Se Pera pad |
+| In an ep BUDIONO :
+UNIT SUNGAI LENGI -s
+dangan kelankn parauan penaptan en ra hp Oke enda yng menerilan Pak Pajak yng ima batas |
+dengan keadaan yang sebenarnya dan/atau sesungguhnya sebagaimana dimaksud Pasal 13 ayat (9) UU PPN dikenai sanksi | | |
+sesuai dengan Pasal 14 ayat (4) UU KUP | |
