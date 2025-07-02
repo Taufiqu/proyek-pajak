@@ -21,8 +21,12 @@ from services import (
     save_invoice_data,
     generate_excel_export,
     get_history,
-    delete_faktur
 )
+from services.delete import (
+    delete_faktur,
+    delete_bukti_setor
+)
+from bukti_setor.routes import bukti_setor_bp
 
 # ==============================================================================
 # INISIALISASI FLASK APP
@@ -32,6 +36,9 @@ app.config.from_object(Config)
 CORS(app, origins=["http://localhost:3000"])  # sesuaikan jika beda port
 
 db.init_app(app)
+app.register_blueprint(bukti_setor_bp)
+from flask_migrate import Migrate  # ⬅️ import ini di bagian atas
+migrate = Migrate(app, db)        # ⬅️ ini setelah db.init_app(app)
 
 # ==============================================================================
 # ROUTES
@@ -82,6 +89,10 @@ def route_get_history():
 @app.route("/api/delete/<string:jenis>/<int:id>", methods=["DELETE"])
 def route_delete_faktur(jenis, id):
     return delete_faktur(jenis, id)
+
+@app.route("/api/bukti_setor/delete/<int:id>", methods=["DELETE"])
+def delete_bukti_setor_endpoint(id):
+    return delete_bukti_setor(id)
 
 @app.route("/preview/<filename>")
 def serve_preview(filename):

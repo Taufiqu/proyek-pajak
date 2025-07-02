@@ -22,6 +22,14 @@ const Navbar = () => {
       >
         📜 Laporan
       </Link>
+      <Link
+        to="/bukti-setor"
+        className={`nav-link ${
+          location.pathname === "/bukti-setor" ? "active" : ""
+        }`}
+      >
+        🧾 Bukti Setor
+      </Link>
     </nav>
   );
 };

@@ -1,28 +1,35 @@
 /* ==========================================================================
-   1. VARIABEL & GAYA GLOBAL
+   🌐 GLOBAL STYLES & VARIABLES
    ========================================================================== */
 :root {
   --primary: #2C3E50;
+  --primary-light: #34495E;
+  --primary-dark: #1A252F;
   --secondary: #F4C542;
   --success: #27ae60;
   --error: #e74c3c;
-  --text: #333333;
-  --background: #f8f9fa;
+  --text: #333;
+  --background: #ecf0f1;
 }
 
-html {
-  font-size: 20px; /* Ukuran font dasar untuk aksesibilitas yang lebih baik */
-}
+html { font-size: 14px; }
 
 body {
-  background-color: #f4f7f6;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background: var(--background);
+  font-family: 'Segoe UI', Roboto, 'Open Sans', sans-serif;
   color: var(--text);
   margin: 0;
   padding: 1.2rem;
-  font-size: 1rem; /* 1rem = 18px */
   line-height: 1.6;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: url('../public/background_pattern.png') repeat;
+  opacity: 0.06;
+  z-index: -1;
 }
 
 .App {
@@ -30,43 +37,26 @@ body {
   margin: 0 auto;
   text-align: center;
   position: relative;
-  z-index: 1; /* Memastikan konten utama berada di lapisan atas */
-}
-
-body::before {
-  content: '';
-  /* Menggunakan 'fixed' agar background tidak ikut scroll dan selalu menutupi layar */
-  position: fixed; 
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-
-  /* Sumber gambar Anda */
-  background-image: url('../public/background_pattern.png');
-  background-repeat: repeat;
-
-  /* Atur transparansi di sini */
-  opacity: 0.1;
-
-  /* Letakkan di lapisan paling belakang */
-  z-index: -1;
+  z-index: 1;
 }
 
 .page-title {
-  font-size: 2.2rem;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
   color: var(--primary);
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.5px;
 }
 
 
 /* ==========================================================================
-   2. NAVIGASI
+   🧭 NAVIGATION
    ========================================================================== */
 .navbar {
-  background-color: var(--primary);
-  padding: 1.2rem;
+  background: var(--primary);
+  padding: 1rem 1.2rem;
   display: flex;
   gap: 2rem;
+  flex-wrap: wrap;
   border-radius: 8px;
   margin-bottom: 1.5rem;
 }
@@ -75,251 +65,226 @@ body::before {
   color: white;
   text-decoration: none;
   font-weight: bold;
-  font-size: 1.2rem;
-  transition: color 0.2s ease-in-out;
+  font-size: 1.1rem;
+  transition: color 0.2s ease;
 }
 
 .nav-link:hover,
 .nav-link.active {
   color: var(--secondary);
-}
-
-.nav-link.active {
   text-decoration: underline;
   text-underline-offset: 5px;
 }
 
 
 /* ==========================================================================
-   3. LAYOUT & CONTAINER
+   📦 CARD / CONTAINER
    ========================================================================== */
 .card {
-  background-color: #ffffff;
+  background: white;
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
   margin-bottom: 1.5rem;
   text-align: left;
+  transition: 0.2s ease;
 }
 
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+
+/* ==========================================================================
+   🧾 FORM & INPUT
+   ========================================================================== */
+.form-validator h3 {
+  font-size: 1.5rem;
+  color: var(--primary);
+}
+
+label {
+  display: block;
+  margin: 1rem 0 0.5rem;
+  font-weight: bold;
+  font-size: 1.05rem;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1.05rem;
+  box-sizing: border-box;
+  transition: border 0.2s ease;
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+}
+
+.textarea-field {
+  resize: vertical;
+  font-family: inherit;
+}
+
+
+/* ==========================================================================
+   🖼️ PREVIEW
+   ========================================================================== */
 .preview-form-container {
   display: flex;
+  flex-wrap: wrap;
   gap: 1.5rem;
   align-items: flex-start;
   margin-top: 1.5rem;
-  flex-wrap: wrap;
 }
 
-.preview-column {
+.preview-column,
+.form-column {
   flex: 1;
   min-width: 300px;
 }
 
-.form-column {
-  flex: 1.5;
-  min-width: 300px;
-}
-
-.preview-img {
+.preview-img,
+img.preview {
   width: 100%;
   height: auto;
-  border: 1px solid #ccc;
-  border-radius: 5px;
   object-fit: contain;
-}
-
-
-/* ==========================================================================
-   4. FORM & INPUT
-   ========================================================================== */
-.form-validator h3 {
-    font-size: 1.5rem;
-    color: var(--primary);
-}
-
-.form-validator label {
-  display: block;
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-  font-weight: bold;
-  font-size: 1.1rem;
-}
-
-.form-validator input[type="text"],
-.form-validator input[type="date"],
-.form-validator input[type="number"],
-.form-validator textarea {
-  width: 100%;
-  padding: 0.7rem;
   border: 1px solid #ccc;
   border-radius: 5px;
-  font-size: 1.1rem;
-  box-sizing: border-box;
-}
-
-.textarea-field {
-  width: 100%;
-  padding: 0.7rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 1.1rem;
-  font-family: inherit; /* Memastikan font sama dengan input lainnya */
-  box-sizing: border-box;
-  resize: vertical; /* Memungkinkan pengguna mengubah tinggi textarea */
+  max-width: 400px;
 }
 
 
 /* ==========================================================================
-   5. TOMBOL (BUTTONS)
-   ========================================================================== */
-/* ==========================================================================
-   5. TOMBOL (BUTTONS)
+   🔘 BUTTONS
    ========================================================================== */
 .button, button {
-  /* JADIKAN WARNA UTAMA SEBAGAI DEFAULT UNTUK SEMUA TOMBOL AKTIF */
-  background-color: var(--primary);
+  background: var(--primary);
   color: white;
-  
-  border: none;
   padding: 0.7rem 1.4rem;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.05rem;
   font-weight: bold;
-  transition: background-color 0.3s, opacity 0.3s;
+  cursor: pointer;
   margin: 0.5rem;
-  text-decoration: none;
-  display: inline-block;
+  transition: background 0.3s ease, transform 0.1s ease;
 }
 
-/* Aturan untuk hover pada tombol yang aktif */
-button:hover:not(:disabled), .button:hover:not(:disabled) {
-  opacity: 0.9;
+.button:hover:not(:disabled),
+button:hover:not(:disabled) {
+  background: var(--primary-dark);
 }
 
-/* GANTI WARNA DISABLED MENJADI LEBIH PUCAT */
-button:disabled, .button:disabled {
-  background-color: #e0e0e0; /* Warna abu-abu sangat terang */
-  color: #a0a0a0; /* Warna teks lebih redup */
+.button:active {
+  transform: scale(0.97);
+}
+
+button:disabled {
+  background: #e0e0e0;
+  color: #999;
   cursor: not-allowed;
-  opacity: 1; /* Hapus efek hover jika ada */
 }
 
-/* Tombol utama (gelap, sesuai warna primer) */
-/* Aturan ini bisa dihapus karena sudah menjadi default, tapi boleh disimpan untuk kejelasan */
-.button-primary {
-  background-color: var(--primary);
-  color: white;
-}
-
-/* Tombol sekunder (kuning/gold, sesuai warna sekunder) */
 .button-secondary {
-  background-color: var(--secondary);
-  color: var(--primary); /* Teks gelap agar kontras dengan latar kuning */
+  background: var(--secondary);
+  color: var(--primary);
 }
 
-/* Tombol spesifik lainnya */
-.save-button {
-  background-color: #e67e22;
-}
-
-.save-all-button {
-  background-color: #8e44ad;
-}
-
-.export-button {
-  background-color: var(--success);
-}
-
+.save-button { background: #e67e22; }
+.save-all-button { background: #8e44ad; }
+.export-button { background: var(--success); }
 .delete-button {
-  background-color: var(--error);
-  padding: 0.4rem 0.8rem; /* Ukuran lebih kecil untuk di dalam tabel */
+  background: var(--error);
+  padding: 0.4rem 0.8rem;
 }
+.reset-button { background: #ffd000;}
 
 
 /* ==========================================================================
-   6. TABEL
+   📊 TABLE
    ========================================================================== */
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
 table {
   width: 100%;
+  min-width: 600px;
   border-collapse: collapse;
-  margin-top: 1.2rem;
   font-size: 1rem;
+  margin-top: 1.2rem;
 }
 
 thead th {
-  background: #eee;
+  background: var(--primary);
+  color: white;
   padding: 0.8rem;
   text-align: left;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+}
+
+tbody tr:nth-child(even) {
+  background: #f4f4f4;
 }
 
 tbody td {
-  border-top: 1px solid #ddd;
   padding: 0.8rem;
-  background-color: #ddd;
+  border-top: 1px solid #ddd;
 }
 
 
 /* ==========================================================================
-   7. PANEL TUTORIAL
+   📚 TUTORIAL / PANEL
    ========================================================================== */
 .tutorial-panel {
   margin-top: 1.5rem;
   border-left: 5px solid var(--secondary);
+  padding-left: 1rem;
 }
 
 .tutorial-panel h3 {
   color: var(--primary);
-  margin-top: 0;
   font-size: 1.5rem;
 }
 
 .tutorial-panel ol {
   padding-left: 1.5rem;
-  line-height: 1.8;
   font-size: 1.1rem;
+  line-height: 1.8;
 }
 
-.tutorial-panel li {
-  margin-bottom: 0.8rem;
-}
-
-.tutorial-panel .tutorial-footer {
+.tutorial-footer {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #eee;
-  font-size: 1em;
   color: #035800;
 }
 
-.tutorial-panel .tutorial-footer-note {
+.tutorial-footer-note {
   margin-top: 1rem;
-  padding-top: 1rem;
-  font-size: 16px;
-  color: #ff0000;
+  color: #e53935;
+  font-size: 1rem;
 }
 
 
 /* ==========================================================================
-   8. UTILITAS & PESAN FEEDBACK
+   ⚠️ FEEDBACK & UTIL
    ========================================================================== */
-.error-text {
-  color: var(--error);
-  font-weight: bold;
-  font-size: 1.1rem;
-  margin-top: 0.5rem;
-}
-
-.success-text {
-  color: var(--success);
-  font-weight: bold;
-}
+.error-text { color: var(--error); font-weight: bold; }
+.success-text { color: var(--success); font-weight: bold; }
 
 .warning-text {
   color: #d9363e;
   font-weight: bold;
-  display: block;
   margin-top: 0.3rem;
   text-align: left;
 }
@@ -329,77 +294,100 @@ tbody td {
   background-color: #fff1f0;
 }
 
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.delete-file-btn {
+  background: none;
+  border: none;
+  color: red;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+
 /* ==========================================================================
-   RESPONSIVE DESIGN - ATURAN UNTUK MOBILE
-   Aturan ini akan aktif jika lebar layar 768px ke bawah
+   🖼️ MODAL IMAGE
+   ========================================================================== */
+.modal-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  flex-grow: 1;
+}
+
+.modal-image {
+  max-width: 70vw;
+  max-height: 85vh;
+  transform-origin: center center;
+  transition: transform 0.1s ease-out;
+}
+
+.modal-overlay {
+  position: fixed;
+  z-index: 9999;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-content {
+  position: relative;
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+}
+.modal-close-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #fff;
+  cursor: pointer;
+}
+
+
+
+/* ==========================================================================
+   📱 RESPONSIVE DESIGN
    ========================================================================== */
 @media (max-width: 768px) {
+  html { font-size: 16px; }
+  body { padding: 1rem; }
 
-  /* 1. PENYESUAIAN GLOBAL & FONT */
-  html {
-    font-size: 16px; /* Kembalikan ukuran font dasar ke 16px untuk mobile */
-  }
+  .page-title { font-size: 1.8rem; }
 
-  body {
-    padding: 0.8rem; /* Kurangi padding di body */
-  }
-
-  .page-title {
-    font-size: 1.8rem; /* Perkecil ukuran judul utama */
-  }
-
-
-  /* 2. PENYESUAIAN NAVIGASI */
   .navbar {
+    flex-direction: column;
     gap: 1rem;
-    padding: 1rem;
-  }
-  .nav-link {
-    font-size: 1.1rem;
+    text-align: center;
   }
 
-
-  /* 3. UBAH LAYOUT MULTI-KOLOM MENJADI SATU KOLOM */
-  /* Ini bagian terpenting untuk form OCR */
   .preview-form-container {
-    flex-direction: column; /* Ubah dari baris menjadi kolom */
-    gap: 1.5rem;
+    flex-direction: column;
   }
 
-  .preview-column,
-  .form-column {
-    max-width: 100%; /* Buat setiap kolom menjadi lebar penuh */
+  .preview-column, .form-column {
     width: 100%;
   }
 
-
-  /* 4. BUAT TABEL BISA DI-SCROLL HORIZONTAL */
-  /* Agar tabel di halaman riwayat tidak merusak layout */
-  .table-wrapper {
-    overflow-x: auto; /* Tambahkan scrollbar horizontal jika tabel terlalu lebar */
-    -webkit-overflow-scrolling: touch; /* Scroll lebih mulus di iOS */
-    border: 1px solid #ddd;
-    border-radius: 8px;
-  }
-
-  table {
-    min-width: 600px; /* Beri lebar minimal agar kolom tidak terlalu sempit */
-  }
-
-
-  /* 5. PENYESUAIAN TOMBOL & FORM */
-  .card, .form-validator {
-    padding: 1.2rem; /* Kurangi padding di dalam card */
-  }
-  
   .navigation-buttons {
     display: flex;
-    flex-direction: column; /* Susun tombol navigasi (simpan, lanjut) secara vertikal */
+    flex-direction: column;
     gap: 0.5rem;
   }
 
   .navigation-buttons button {
     width: 100%;
-    margin: 0; /* Hapus margin samping */
+    margin: 0;
   }
 }

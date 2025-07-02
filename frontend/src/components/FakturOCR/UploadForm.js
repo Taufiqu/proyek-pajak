@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 const UploadForm = ({
   handleUpload,
@@ -7,6 +7,21 @@ const UploadForm = ({
   selectedFiles,
   setSelectedFiles,
 }) => {
+  // ⏪ Ambil dari localStorage pas awal
+  useEffect(() => {
+    const savedNamaPt = localStorage.getItem("nama_pt_utama");
+    if (savedNamaPt) {
+      setNamaPtUtama(savedNamaPt);
+    }
+  }, [setNamaPtUtama]);
+
+  // 💾 Simpan ke localStorage kalau namaPtUtama berubah
+  useEffect(() => {
+    if (namaPtUtama) {
+      localStorage.setItem("nama_pt_utama", namaPtUtama);
+    }
+  }, [namaPtUtama]);
+
   const handleAddFile = (e) => {
     const newFile = Array.from(e.target.files);
     if (newFile.length > 0) {
@@ -19,7 +34,7 @@ const UploadForm = ({
   };
 
   return (
-    <form onSubmit={handleUpload} className="card form-validator"> {/* Mengganti .form-validator dengan .card */}
+    <form onSubmit={handleUpload} className="card form-validator">
       <label>
         Nama PT Utama:
         <input
@@ -36,26 +51,35 @@ const UploadForm = ({
         accept=".pdf, image/*"
         style={{ display: "none" }}
         onChange={handleAddFile}
-        multiple // Tambahkan ini agar bisa pilih banyak file sekaligus
+        multiple
       />
 
-      {/* Tombol untuk trigger upload */}
-      {/* BERIKAN CLASS 'button-primary' DI SINI */}
       <button type="button" onClick={triggerUpload} className="button button-primary">
         📁 Pilih File
       </button>
 
-      {/* Tampilkan list file */}
       {selectedFiles.length > 0 && (
         <ul>
           {selectedFiles.map((file, index) => (
-            <li key={index}>{file.name}</li>
+            <li key={index} className="file-item">
+              {file.name}
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedFiles((prev) =>
+                    prev.filter((_, i) => i !== index)
+                  )
+                }
+                className="delete-file-btn"
+                title="Hapus file ini"
+              >
+                ❌
+              </button>
+            </li>
           ))}
         </ul>
       )}
 
-      {/* Tombol submit upload */}
-      {/* BERIKAN CLASS 'button-secondary' DI SINI */}
       <button
         type="submit"
         className="button button-secondary"
@@ -71,10 +95,9 @@ const UploadForm = ({
         Upload & Proses
       </button>
 
-      {!namaPtUtama && !selectedFiles.length > 0 &&(
-         <p className="error-text">⚠️ Nama PT belum diisi</p>
+      {!namaPtUtama && !selectedFiles.length > 0 && (
+        <p className="error-text">⚠️ Nama PT belum diisi</p>
       )}
-
     </form>
   );
 };

@@ -1,12 +1,13 @@
 import React from "react";
 
-const NavigationButtons = ({
+const NavigationButtonsBuktiSetor = ({
   currentIndex,
   total,
   handleBack,
   handleNext,
   handleSave,
   handleSaveAll,
+  handleReset,
 }) => {
   return (
     <div className="navigation-buttons">
@@ -26,8 +27,11 @@ const NavigationButtons = ({
       <button className="save-all-button" onClick={handleSaveAll}>
         💾 Simpan Semua Halaman
       </button>
+      <button onClick={handleReset} className="reset-button">
+        🧹 Reset Hasil OCR
+      </button>
     </div>
   );
 };
 
-export default NavigationButtons;
+export default NavigationButtonsBuktiSetor;

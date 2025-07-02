@@ -2,8 +2,9 @@
 
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import MainOCRPage from "./components/MainOCRPage";
+import MainOCRPage from "./components/FakturOCR/MainOCRPage";
 import HistoryPage from "./components/HistoryPage";
+import BuktiSetorPage from "./components/BuktiSetorOCR/BuktiSetorPage";
 import "./App.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -15,6 +16,7 @@ function App() {
         <Routes>
           <Route path="/" element={<MainOCRPage />} />
           <Route path="/history" element={<HistoryPage />} />
+          <Route path="/bukti-setor" element={<BuktiSetorPage />} />
         </Routes>
 
         {/* Konfigurasi ToastContainer yang lebih optimal */}

@@ -1,0 +1,35 @@
+import React from "react";
+
+const TutorialPanelBuktiSetor = () => {
+  return (
+    <div className="card tutorial-panel">
+      <h3>Cara Menggunakan OCR Bukti Setor</h3>
+      <p>Ikuti langkah-langkah mudah berikut untuk memproses bukti setor Anda:</p>
+      <ol>
+        <li>
+          <strong>Pilih File:</strong> Klik tombol "📁 Pilih File" untuk memilih
+          gambar atau PDF bukti setor.
+        </li>
+        <li>
+          <strong>Proses File:</strong> Setelah memilih file, klik tombol
+          "Proses" untuk memulai ekstraksi data OCR.
+        </li>
+        <li>
+          <strong>Validasi Data:</strong> Periksa data hasil ekstraksi seperti{" "}
+          <em>Kode Setor</em>, <em>Jumlah</em>, dan <em>Tanggal</em>. Koreksi jika diperlukan.
+        </li>
+        <li>
+          <strong>Simpan Data:</strong> Klik tombol "💾 Simpan ke DB" untuk menyimpan data ke sistem.
+        </li>
+      </ol>
+      <p className="tutorial-footer">
+        Semua data yang telah disimpan dapat dicek dan diekspor di halaman "📜 Laporan".
+      </p>
+      <p className="tutorial-footer-note">
+        Catatan: Hasil OCR sangat bergantung pada kejelasan dan kualitas gambar bukti setor.
+      </p>
+    </div>
+  );
+};
+
+export default TutorialPanelBuktiSetor;
