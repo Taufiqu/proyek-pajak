@@ -1,152 +1,186 @@
+# /faktur_project/app/faktur/utils.py
+
 import re
-from datetime import datetime
-import numpy as np
-import cv2
-import pytesseract
 import os
-from thefuzz import fuzz
-from flask import current_app
 import hashlib
 from io import BytesIO
+from datetime import datetime
 from PIL import Image
+from thefuzz import fuzz
 
-
-# ==============================================================================
-# FUNGSI-FUNGSI HELPER UNTUK FAKTUR
-# ==============================================================================
+def allowed_file(filename):
+    """Memeriksa apakah ekstensi file diizinkan."""
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in {"pdf", "png", "jpg", "jpeg"}
 
 def clean_number(text):
-    """Membersihkan string angka dari format Rupiah ke format standar float."""
-    if not text: return 0.0
-    # Hanya sisakan digit, koma, dan tanda minus
-    cleaned_text = re.sub(r'[^\d,-]', '', text).strip()
+    """Mengonversi string mata uang ke float, menangani berbagai format."""
+    if not text:
+        return 0.0
+    cleaned_text = re.sub(r"[^\d,.-]", "", text).strip()
     try:
-        # Ubah koma desimal Indonesia menjadi titik
-        cleaned_text = cleaned_text.replace(',', '.')
+        if "," in cleaned_text and "." in cleaned_text:
+            cleaned_text = cleaned_text.replace(".", "").replace(",", ".")
+        elif "." in cleaned_text and "," not in cleaned_text:
+            cleaned_text = cleaned_text.replace(".", "")
+        elif "," in cleaned_text:
+             cleaned_text = cleaned_text.replace(",", ".")
         return float(cleaned_text)
     except (ValueError, TypeError):
-        current_app.logger.warning(f"clean_number gagal mengubah '{text}'")
         return 0.0
 
 def clean_string(text):
-    """Membersihkan string nama perusahaan untuk perbandingan yang andal."""
-    if not text: return ""
-    
-    if ':' in text: text = text.split(':', 1)[1]
+    """Membersihkan string nama perusahaan untuk perbandingan fuzzy logic."""
+    if not text:
+        return ""
+    if ":" in text:
+        text = text.split(":", 1)[1]
     text = text.upper()
-    text = re.sub(r'[^A-Z\s]', '', text) # Hanya sisakan huruf dan spasi
-    text = re.sub(r'\b(PT|CV|TBK|PERSERO|PERUM|UD)\b', '', text)
-    
-    words = [word for word in text.split() if len(word) > 2]
+    text = re.sub(r"[^A-Z\s]", "", text)
+    text = re.sub(r"\b(PT|CV|TBK|PERSERO|PERUM|UD)\b", "", text)
+    words = [w for w in text.split() if len(w) > 2]
     return " ".join(words).strip()
 
-def extract_faktur_info(raw_text):
+def simpan_preview_image(pil_image, halaman_ke, upload_folder):
+    """Menyimpan gambar preview dengan nama unik berbasis hash."""
+    try:
+        pil_image = pil_image.convert("RGB")
+        buffer = BytesIO()
+        pil_image.save(buffer, format="JPEG", quality=85)
+        img_bytes = buffer.getvalue()
+        img_hash = hashlib.md5(img_bytes).hexdigest()
+        filename = f"preview_{img_hash}_halaman_{halaman_ke}.jpg"
+        filepath = os.path.join(upload_folder, filename)
+        if not os.path.exists(filepath):
+            with open(filepath, "wb") as f:
+                f.write(img_bytes)
+        return filename
+    except Exception as e:
+        print(f"[ERROR] Gagal menyimpan preview: {e}")
+        return None
+
+def extract_faktur_tanggal(raw_text):
     """Mengekstrak No. Faktur dan Tanggal dari teks mentah."""
-    no_faktur = None
-    tanggal_obj = None
+    no_faktur, tanggal_obj = None, None
+    tolerant_pattern = r"0[0-9a-zA-Z]{2}[-.\s]?[0-9a-zA-Z]{3}[-.\s]?[0-9a-zA-Z]{2}[-.\s]?[0-9a-zA-Z]{8,}"
+    all_candidates = re.findall(tolerant_pattern, raw_text, re.IGNORECASE)
+    valid_candidates = [cand for cand in all_candidates if "npwp" not in raw_text[max(0, raw_text.find(cand)-20):raw_text.find(cand)].lower()]
+    if valid_candidates:
+        candidate_str = valid_candidates[0]
+        corrections = {"O": "0", "o": "0", "I": "1", "l": "1", "S": "5", "s": "5", "B": "8", "g": "9"}
+        normalized_str = "".join(corrections.get(char, char) for char in candidate_str)
+        digits_only = re.sub(r"\D", "", normalized_str)[:16]
+        if len(digits_only) >= 14:
+            no_faktur = f"{digits_only[:3]}.{digits_only[3:6]}-{digits_only[6:8]}.{digits_only[8:16]}"
 
-    # Ekstrak No. Faktur dengan pola yang lebih umum
-    # Format: 010.000-24.00000001
-    faktur_match = re.search(r'(\d{3})\.?(\d{3})-?(\d{2})\.?(\d{8})', raw_text)
-    if faktur_match:
-        no_faktur = f"{faktur_match.group(1)}.{faktur_match.group(2)}-{faktur_match.group(3)}.{faktur_match.group(4)}"
-        current_app.logger.info(f"Nomor Faktur ditemukan: {no_faktur}")
-
-    # Ekstraksi Tanggal
-    tanggal_match = re.search(r"(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})", raw_text)
-    if tanggal_match:
-        hari, bulan_str, tahun = tanggal_match.groups()
-        bulan_map = {
-            "januari": "January", "februari": "February", "maret": "March", "april": "April",
-            "mei": "May", "juni": "June", "juli": "July", "agustus": "August", "september": "September",
-            "oktober": "October", "november": "November", "desember": "December"
-        }
-        bulan_inggris = bulan_map.get(bulan_str.lower())
-        if bulan_inggris:
-            try:
-                tanggal_obj = datetime.strptime(f"{hari} {bulan_inggris} {tahun}", "%d %B %Y").date()
-                current_app.logger.info(f"Tanggal ditemukan: {tanggal_obj}")
-            except ValueError:
-                pass
-    
+    bulan_list = "Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember"
+    pola_tgl = rf"(\d{{1,2}})\s+({bulan_list})\s+(\d{{4}})"
+    matches = re.findall(pola_tgl, raw_text, re.IGNORECASE)
+    if matches:
+        hari, bulan, tahun = matches[-1]
+        bulan_map = {b.lower(): i+1 for i, b in enumerate(bulan_list.split('|'))}
+        try:
+            tanggal_obj = datetime(int(tahun), bulan_map[bulan.lower()], int(hari))
+        except (ValueError, KeyError): pass
     return no_faktur, tanggal_obj
 
-def extract_classification_and_parties(raw_text, pt_utama):
-    """Menentukan jenis pajak dan memisahkan blok teks penjual/pembeli."""
+def extract_jenis_pajak(raw_text, pt_utama):
+    """Menentukan jenis pajak dengan logika pembagian blok dan fuzzy matching."""
     pt_clean = clean_string(pt_utama)
-    # Keyword pemisah yang lebih andal
-    parts = re.split(r"pembeli\s+barang\s+kena\s+pajak", raw_text, flags=re.IGNORECASE | re.DOTALL)
+    splitter_pattern = r"Pembel[il]\s*.*?Kena\s*Pajak"
+    parts = re.split(splitter_pattern, raw_text, flags=re.IGNORECASE | re.DOTALL)
+
+    if len(parts) >= 2:
+        blok_penjual, blok_pembeli = parts[0], parts[1]
+        if fuzz.partial_ratio(clean_string(blok_pembeli), pt_clean) > 75:
+            return "PPN_MASUKAN", blok_penjual
+        if fuzz.partial_ratio(clean_string(blok_penjual), pt_clean) > 75:
+            return "PPN_KELUARAN", blok_pembeli
     
-    if len(parts) < 2:
-        current_app.logger.warning("Keyword 'Pembeli Barang Kena Pajak' tidak ditemukan.")
-        return None, None, None
-
-    blok_sebelum, blok_pembeli = parts
+    lines = raw_text.splitlines()
+    for line in lines:
+        if fuzz.ratio(clean_string(line), pt_clean) > 80:
+            return "PPN_MASUKAN", "N/A"
     
-    # Blok penjual adalah semua teks sebelum blok pembeli
-    penjual_match = re.search(r"pengusaha\s+kena\s+pajak", blok_sebelum, flags=re.IGNORECASE | re.DOTALL)
-    blok_penjual = blok_sebelum[penjual_match.end():] if penjual_match else blok_sebelum
-
-    if any(fuzz.ratio(clean_string(line), pt_clean) > 75 for line in blok_pembeli.splitlines()):
-        return 'PPN_MASUKAN', blok_penjual, blok_pembeli
-    elif any(fuzz.ratio(clean_string(line), pt_clean) > 75 for line in blok_penjual.splitlines()):
-        return 'PPN_KELUARAN', blok_pembeli, blok_penjual
-
-    return None, None, None
-
-def extract_rekanan_details(blok_rekanan):
+    return None, None
+    
+def extract_npwp_nama_rekanan(blok_rekanan):
     """Mengekstrak Nama dan NPWP dari blok teks rekanan."""
-    nama = "Tidak Ditemukan"
-    npwp = "Tidak Ditemukan"
-
-    # Ekstraksi Nama
-    nama_match = re.search(r"Nama\s*:\s*([^\n]+)", blok_rekanan, re.IGNORECASE)
-    if nama_match:
-        nama = nama_match.group(1).strip()
-
-    # Ekstraksi NPWP
-    npwp_match = re.search(r"NPWP\s*:\s*([\d.,-]+)", blok_rekanan, re.IGNORECASE)
-    if npwp_match:
-        digits = re.sub(r'\D', '', npwp_match.group(1))
-        if len(digits) >= 15:
-            npwp15 = digits[:15]
-            npwp = f"{npwp15[:2]}.{npwp15[2:5]}.{npwp15[5:8]}.{npwp15[8]}.{npwp15[9:12]}.{npwp15[12:15]}"
-
+    if blok_rekanan == "N/A":
+        return "Periksa Manual", "Periksa Manual"
+    nama, npwp = "Tidak Ditemukan", "Tidak Ditemukan"
+    lines = blok_rekanan.splitlines()
+    for line in lines:
+        if "nama" in line.lower():
+            nama_candidate = line.split(':')[-1].strip()
+            if len(nama_candidate) > 3: nama = nama_candidate
+        if "npwp" in line.lower():
+            digits = re.sub(r'\D', '', line)
+            if len(digits) >= 15:
+                npwp15 = digits[:15]
+                npwp = f"{npwp15[:2]}.{npwp15[2:5]}.{npwp15[5:8]}.{npwp15[8]}-{npwp15[9:12]}.{npwp15[12:15]}"
+    
+    if nama == "Tidak Ditemukan" and lines:
+        first_line_cleaned = lines[0].strip()
+        if len(first_line_cleaned) > 5 and "pengusaha" not in first_line_cleaned.lower():
+            nama = first_line_cleaned
+            
     return nama, npwp
 
-def extract_financials(raw_text):
-    """Mengekstrak DPP dan PPN dari teks mentah."""
-    dpp = 0.0
-    ppn = 0.0
+def extract_dpp_ppn(raw_text):
+    """
+    Mengekstrak DPP dan PPN.
+    [PENYEMPURNAAN V2] Regex dibuat lebih toleran terhadap newline (\n)
+    antara label dan nilai, meningkatkan akurasi pada hasil OCR yang tidak rapi.
+    """
+    dpp, ppn = 0.0, 0.0
 
-    # Cari Total DPP
-    dpp_match = re.search(r"Dasar\s+Pengenaan\s+Pajak\s*[:\s]*Rp?([\d.,]+)", raw_text, re.IGNORECASE)
+    dpp_pattern = r"Dasar\s+Pengenaan\s+Pajak\s*[:=\s]*Rp?[\s\n]*([\d.,]+)"
+    ppn_pattern = r"(?:Total\s+PPN|PPN\s*=\s*|PPN\s+Terutang)\s*[:=\s]*Rp?[\s\n]*([\d.,]+)"
+
+    dpp_match = re.search(dpp_pattern, raw_text, re.IGNORECASE)
     if dpp_match:
         dpp = clean_number(dpp_match.group(1))
     
-    # Cari Total PPN
-    ppn_match = re.search(r"Total\s+PPN\s*[:=\s]*Rp?([\d.,]+)", raw_text, re.IGNORECASE)
+    ppn_match = re.search(ppn_pattern, raw_text, re.IGNORECASE)
     if ppn_match:
         ppn = clean_number(ppn_match.group(1))
     
-    # Fallback: Jika PPN 0 tapi DPP ada, hitung PPN 11%
-    if dpp > 0 and ppn == 0:
+    # Fallback logic tetap dipertahankan
+    elif dpp > 0 and ppn == 0:
         ppn = round(dpp * 0.11, 2)
-        current_app.logger.info(f"PPN dihitung dari DPP (11%): {ppn}")
         
     return dpp, ppn
 
-def save_preview_image(pil_image, page_num):
-    """Menyimpan gambar preview dan mengembalikan nama filenya."""
-    buffer = BytesIO()
-    pil_image.convert("RGB").save(buffer, format="JPEG", quality=75)
-    img_bytes = buffer.getvalue()
-    img_hash = hashlib.md5(img_bytes).hexdigest()
-    
-    filename = f"{img_hash}_page_{page_num}.jpg"
-    filepath = current_app.root_path[:-4] + f"/{current_app.config['UPLOAD_FOLDER']}/{filename}"
-    
-    if not os.path.exists(filepath):
-        with open(filepath, 'wb') as f:
-            f.write(img_bytes)
-    return filename
+def extract_keterangan(raw_text):
+
+    try:
+        # Penanda awal tetap sama: mencari header tabel deskripsi
+        start_match = re.search(r"Harga\s+Jual/Penggantian|Nama\s+Barang\s+Kena\s+Pajak", raw_text, re.IGNORECASE)
+        
+        # Penanda akhir juga tetap sama: mencari awal bagian total
+        end_match = re.search(r"Dasar\s+Pengenaan\s+Pajak|Jumlah\s+Harga\s+Jual|Total\s+DPP", raw_text, re.IGNORECASE)
+        
+        if start_match and end_match:
+            # Ambil blok teks di antara dua penanda
+            block = raw_text[start_match.end() : end_match.start()]
+            
+            cleaned_lines = []
+            for line in block.splitlines():
+                clean_line = line.strip()
+                if not clean_line:
+                    continue
+                if (re.search(r'\d[\d.,\s]*x\s*\d', clean_line) or 
+                    re.match(r'^[\d.,\s]+$', clean_line) or
+                    clean_line.lower() in ["termin", "potongan harga", "uang muka"]):
+                    continue
+                
+                cleaned_lines.append(clean_line)
+
+            # Gabungkan baris-baris yang sudah bersih
+            return " || ".join(cleaned_lines) if cleaned_lines else "Tidak ditemukan"
+
+    except Exception as e:
+        print(f"[ERROR] Gagal mengekstrak keterangan: {e}")
+        return "Gagal mengekstrak keterangan"
+        
+    return "Tidak ditemukan"
