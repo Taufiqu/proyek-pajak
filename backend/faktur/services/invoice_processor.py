@@ -7,12 +7,14 @@ import pytesseract
 from flask import jsonify
 from pdf2image import convert_from_path
 from PIL import Image
-from utils import (
-    allowed_file, preprocess_for_ocr, simpan_preview_image,
+from faktur.utils import (
     extract_faktur_tanggal, extract_jenis_pajak,
     extract_npwp_nama_rekanan, extract_dpp,
     extract_ppn, extract_keterangan
 )
+from shared_utils.file_utils import allowed_file
+from bukti_setor.utils.helpers import preprocess_for_ocr, simpan_preview_image
+
 
 def process_invoice_file(request, config):
     if "file" not in request.files:
@@ -50,7 +52,12 @@ def process_invoice_file(request, config):
 
             thresh = preprocess_for_ocr(img_cv)
 
-            preview_filename = simpan_preview_image(image, halaman_ke, config['UPLOAD_FOLDER'], file.filename)
+            preview_filename = simpan_preview_image(
+                pil_image=image,
+                upload_folder=config['UPLOAD_FOLDER'],
+                page_num=halaman_ke,
+                original_filename=file.filename
+            )
 
             raw_text = pytesseract.image_to_string(img_cv, lang="ind", config="--psm 6")
             no_faktur, tanggal_obj = extract_faktur_tanggal(raw_text)
@@ -118,12 +125,6 @@ def process_invoice_file(request, config):
             print(
                 f"[✅ HALAMAN {halaman_ke}] Faktur: {no_faktur} | DPP: {dpp_str} | PPN: {ppn_str}"
             )
-
-            preview_filename = (
-                f"preview_{os.path.splitext(file.filename)[0]}_hal_{halaman_ke}.jpg"
-            )
-            preview_path = os.path.join(config['UPLOAD_FOLDER'], preview_filename)
-            cv2.imwrite(preview_path, thresh)
 
             print("[DEBUG] Hasil halaman ke", halaman_ke)
             print(json.dumps(hasil_semua_halaman[-1], indent=2, ensure_ascii=False))

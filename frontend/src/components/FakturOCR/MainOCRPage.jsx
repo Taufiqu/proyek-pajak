@@ -200,7 +200,7 @@ function App() {
               <ValidationForm
                 data={currentData}
                 onImageClick={() =>
-                      setModalSrc(`/api/bukti_setor/uploads/${currentData?.preview_image}`)}
+                      setModalSrc(`${process.env.REACT_APP_API_URL}/preview/${currentData.preview_image}`)}
                 updateData={(updatedFields) => {
                   const updated = [...formPages];
                   updated[currentIndex].data = {

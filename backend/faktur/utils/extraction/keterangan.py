@@ -1,5 +1,5 @@
 import re
-from utils.helpers import clean_string
+from shared_utils.text_utils import clean_string
 
 def extract_keterangan(raw_text):
     try:

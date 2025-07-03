@@ -15,17 +15,16 @@ from flask_sqlalchemy import SQLAlchemy
 # ==============================================================================
 from config import Config
 from models import db
-from utils import allowed_file  # only needed in route if used directly
-from services import (
+from bukti_setor.utils import allowed_file
+from faktur.services import (
     process_invoice_file,
     save_invoice_data,
     generate_excel_export,
     get_history,
 )
-from services.delete import (
-    delete_faktur,
-    delete_bukti_setor
-)
+from faktur.services.delete import delete_faktur
+from bukti_setor.services.delete import delete_bukti_setor
+
 from bukti_setor.routes import bukti_setor_bp
 from bukti_setor.routes import laporan_bp  # pastikan ini diimpor untuk digunakan
 

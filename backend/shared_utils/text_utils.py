@@ -1,12 +1,9 @@
-# utils/helpers.py
+# shared_utils/text_utils.py
 
 import re
-from PIL import Image
-
-ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg"}
+import textdistance
 
 def clean_number(text):
-    """Convert string seperti 'Rp 1.000.000,00' ke float 1000000.0"""
     if not text:
         return 0.0
     cleaned_text = re.sub(r"[^\d,.-]", "", text).strip()
@@ -27,6 +24,26 @@ def format_currency(value, with_symbol=True):
     except:
         return "Rp 0,00" if with_symbol else "0,00"
 
+def clean_transaction_value(value_str):
+    if not value_str:
+        return None
+    cleaned = re.sub(r'[^\d,.]', '', str(value_str))
+    if ',' in cleaned and '.' in cleaned:
+        if cleaned.rfind(',') > cleaned.rfind('.'):
+            cleaned = cleaned.replace('.', '').replace(',', '.')
+        else:
+            cleaned = cleaned.replace(',', '')
+    elif ',' in cleaned:
+        if len(cleaned.split(',')[-1]) <= 2:
+            cleaned = cleaned.replace(',', '.')
+        else:
+            cleaned = cleaned.replace(',', '')
+    try:
+        final_val = int(float(cleaned))
+        return final_val if final_val > 1000 else None
+    except (ValueError, TypeError):
+        return None
+
 def clean_string(text):
     if not text:
         return ""
@@ -38,16 +55,6 @@ def clean_string(text):
     words = [w for w in text.split() if len(w) > 2]
     return " ".join(words).strip()
 
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def is_image_file(filename):
-    return filename.lower().endswith((".jpg", ".jpeg", ".png"))
-
-def is_valid_image(path):
-    try:
-        with Image.open(path) as img:
-            img.verify()
-        return True
-    except Exception:
-        return False
+def fuzzy_month_match(input_month, all_months):
+    matches = [m for m in all_months if textdistance.levenshtein.normalized_similarity(input_month.lower(), m.lower()) > 0.6]
+    return matches[0] if matches else None

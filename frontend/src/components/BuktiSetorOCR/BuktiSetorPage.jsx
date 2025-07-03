@@ -123,7 +123,7 @@ const BuktiSetorPage = () => {
 
     try {
       await saveBuktiSetor(item);
-      toast.success("✅ Data berhasil disimpan.");
+      toast.success("Data berhasil disimpan.");
     } catch (err) {
       console.error("❌ Gagal simpan:", err);
       toast.error("Gagal menyimpan data.");

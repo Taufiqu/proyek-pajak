@@ -19,7 +19,8 @@ const TutorialPanelBuktiSetor = () => {
           <em>Kode Setor</em>, <em>Jumlah</em>, dan <em>Tanggal</em>. Koreksi jika diperlukan.
         </li>
         <li>
-          <strong>Simpan Data:</strong> Klik tombol "💾 Simpan ke DB" untuk menyimpan data ke sistem.
+          <strong>Simpan Data:</strong> Klik "💾 Simpan Halaman Ini" atau "💾
+          Simpan Semua Halaman" untuk menyimpan data ke dalam laporan.
         </li>
       </ol>
       <p className="tutorial-footer">

@@ -3,7 +3,7 @@ import React from "react";
 const TutorialPanel = () => {
   return (
     <div className="card tutorial-panel">
-      <h3>Cara Menggunakan Aplikasi OCR Faktur</h3>
+      <h3>Cara Menggunakan OCR Faktur</h3>
       <p>Ikuti langkah-langkah mudah berikut untuk memproses faktur Anda:</p>
       <ol>
         <li>
