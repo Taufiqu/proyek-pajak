@@ -12,9 +12,6 @@ venv/
 uploads/
 debug/
 *.jpg
-*.png
-*.txt
-*.xlsx
 
 # ========== FLASK BACKEND ==========
 /backend/venv/

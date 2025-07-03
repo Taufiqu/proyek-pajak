@@ -27,13 +27,14 @@ from services.delete import (
     delete_bukti_setor
 )
 from bukti_setor.routes import bukti_setor_bp
+from bukti_setor.routes import laporan_bp  # pastikan ini diimpor untuk digunakan
 
 # ==============================================================================
 # INISIALISASI FLASK APP
 # ==============================================================================
 app = Flask(__name__)
 app.config.from_object(Config)
-CORS(app, origins=["http://localhost:3000"])  # sesuaikan jika beda port
+CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
 
 db.init_app(app)
 app.register_blueprint(bukti_setor_bp)

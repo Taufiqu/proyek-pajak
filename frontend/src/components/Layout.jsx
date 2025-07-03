@@ -5,7 +5,7 @@ import "../App.css";
 const Layout = ({ children }) => {
   return (
     <div className="container">
-      <Navbar /> {Navbar}
+      <Navbar />
       <main>{children}</main>
     </div>
   );

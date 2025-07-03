@@ -25,8 +25,8 @@ const loadHistories = async () => {
     setData(fakturRes.data || []);
 
     // ✅ Validasi array dulu sebelum set
-    if (Array.isArray(setorRes.data)) {
-      setBuktiSetorData(setorRes.data);
+    if (Array.isArray(setorRes.data?.data)) {
+      setBuktiSetorData(setorRes.data.data);
     } else {
       console.warn("⚠️ Response bukti setor bukan array:", setorRes.data);
       setBuktiSetorData([]);
@@ -190,6 +190,16 @@ const loadHistories = async () => {
                 </tbody>
               </table>
             </div>
+          )}
+           {data.length > 0 && (
+            <a
+              className="export-button"
+              href={`${process.env.REACT_APP_API_URL}/api/export_bukti_setor`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              📤 Export ke Excel
+            </a>
           )}
         </>
       )}

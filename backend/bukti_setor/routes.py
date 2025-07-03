@@ -6,8 +6,10 @@ from models import BuktiSetor
 from models import db
 from .utils import extract_bukti_setor_data
 from services.delete import delete_bukti_setor
+from services.excel_exporter import generate_excel_bukti_setor_export
 
 bukti_setor_bp = Blueprint('bukti_setor', __name__, url_prefix='/api/bukti_setor')
+laporan_bp = Blueprint("laporan_bp", __name__)
 
 # --- ENDPOINT BARU UNTUK MENYAJIKAN FILE PREVIEW ---
 @bukti_setor_bp.route('/uploads/<path:filename>')
@@ -41,6 +43,7 @@ def process_bukti_setor_endpoint():
 @bukti_setor_bp.route('/save', methods=['POST'])
 def save_bukti_setor_endpoint():
     data = request.get_json()
+    print("🚀 Data diterima di backend:", data)
     kode_setor = data.get('kode_setor')
     tanggal = data.get('tanggal')
     jumlah = data.get('jumlah')
@@ -88,3 +91,6 @@ def get_bukti_setor_history():
 def delete_bukti_setor_route(id):
     return delete_bukti_setor(id)
 
+@laporan_bp.route("/api/export_bukti_setor", methods=["GET"])
+def export_bukti_setor():
+    return generate_excel_bukti_setor_export(db)

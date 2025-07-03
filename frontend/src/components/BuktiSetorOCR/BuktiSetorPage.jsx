@@ -1,5 +1,5 @@
 // src/components/BuktiSetorPage.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Layout from "../Layout";
 import UploadFormBuktiSetor from "./UploadFormBuktiSetor";
 import BuktiSetorValidationForm from "./BuktiSetorValidationForm";
@@ -53,6 +53,8 @@ const BuktiSetorPage = () => {
   // Alias ke validationResults supaya nama konsisten kaya di Faktur
   const formPages = validationResults;
   const setFormPages = setValidationResults;
+  const fileInputRef = useRef(null);
+  const [files, setFiles] = useState([]);
 
   // 🔄 Proses file upload satu per satu
  const handleProcess = async () => {
@@ -117,6 +119,8 @@ const BuktiSetorPage = () => {
     const item = validationResults.find((val) => val.id === id);
     if (!item) return;
 
+    console.log("[🛰️ DATA YANG DIKIRIM KE BACKEND]", item); // Tambahin ini!
+
     try {
       await saveBuktiSetor(item);
       toast.success("✅ Data berhasil disimpan.");
@@ -150,11 +154,25 @@ const BuktiSetorPage = () => {
   };
 
     const handleReset = () => {
-    localStorage.removeItem("formPages");
-    localStorage.removeItem("formIndex");
-    setFormPages([]);
+    // 🔄 Reset semua state utama
+    setSelectedFiles([]);
+    setValidationResults([]);
+    setFiles([]);
     setCurrentIndex(0);
-  }
+    setModalSrc(null);
+    setUploadError("");
+
+    // 🗑️ Bersihin localStorage
+    localStorage.removeItem("buktiValidationResults");
+    localStorage.removeItem("buktiSelectedFiles");
+
+    // ❌ Kosongin input file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = null;
+    }
+
+    toast.info("Form berhasil di-reset 🚿");
+  };
 
   return (
     <Layout>
