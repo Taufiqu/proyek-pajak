@@ -186,6 +186,7 @@ const BuktiSetorPage = () => {
           setSelectedFiles={setSelectedFiles}
           handleProcess={handleProcess}
           loading={isLoading}
+          fileInputRef={fileInputRef}
         />
 
         {uploadError && <div className="error-text">{uploadError}</div>}

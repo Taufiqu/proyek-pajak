@@ -5,6 +5,7 @@ const UploadFormBuktiSetor = ({
   selectedFiles = [],
   setSelectedFiles,
   loading,
+  fileInputRef = null, // Tambahkan ref untuk input file
 }) => {
   const handleAddFiles = (e) => {
     const newFiles = Array.from(e.target.files);
@@ -20,7 +21,9 @@ const UploadFormBuktiSetor = ({
   };
 
   const triggerUpload = () => {
-    document.getElementById("buktiSetorUploadInput").click();
+    if (fileInputRef?.current) {
+      fileInputRef.current.click();
+    }
   };
 
   return (
@@ -34,6 +37,7 @@ const UploadFormBuktiSetor = ({
         accept="image/*,.pdf"
         style={{ display: "none" }}
         onChange={handleAddFiles}
+        ref={fileInputRef} // ⬅️ Ini dia yang kurang!
         multiple
       />
 

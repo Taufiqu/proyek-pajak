@@ -75,15 +75,6 @@ const BuktiSetorValidationForm = ({
         {itemData.warning_message && (
             <p className="input-warning">{itemData.warning_message}</p>
         )}
-
-        <div
-            className="form-actions"
-            style={{ marginTop: "1rem", display: "flex", gap: "10px" }}
-        >
-            <button type="button" onClick={onSave} className="button-primary">
-            Simpan
-            </button>
-        </div>
         </div>
     </div>
     );

@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+//MainOCRPage.jsx
+
+import React, { useState, useRef } from "react";
 import { useEffect } from "react";
 import { toast } from "react-toastify";
 import UploadForm from "./UploadForm";
@@ -8,6 +10,7 @@ import NavigationButtons from "./NavigationButtons";
 import TutorialPanel from "./TutorialPanel";
 import Layout from "../Layout";
 import LoadingSpinner from "../LoadingSpinner";
+import ImageModal from "./ImageModal";
 import { 
   processFaktur,
   saveFaktur,
@@ -20,6 +23,7 @@ function App() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [modalSrc, setModalSrc] = useState(null);
 
   // Load hasil dari localStorage saat pertama kali komponen render
   useEffect(() => {
@@ -37,6 +41,9 @@ function App() {
         localStorage.setItem("formIndex", currentIndex);
       }
     }, [formPages, currentIndex]);
+
+  const fileInputRef = useRef(null);
+
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -146,8 +153,18 @@ function App() {
   const handleReset = () => {
     localStorage.removeItem("formPages");
     localStorage.removeItem("formIndex");
+    localStorage.removeItem("selectedFiles");
+    setUploadError("");
+    setIsProcessing(false);
+    setSelectedFiles([]);
     setFormPages([]);
     setCurrentIndex(0);
+
+    if (fileInputRef.current) {
+          fileInputRef.current.value = null;
+        }
+    
+        toast.info("Form berhasil di-reset 🚿");
   }
 
   const currentData = formPages[currentIndex]?.data;
@@ -172,11 +189,18 @@ function App() {
         <>
           <div className="preview-form-container">
             <div className="preview-column">
-              <PreviewPanel data={currentData} />
+              <PreviewPanel
+                data={currentData}
+                onImageClick={() =>
+                  setModalSrc(`${process.env.REACT_APP_API_URL}/preview/${currentData.preview_image}`)
+                }
+              />
             </div>
             <div className="form-column">
               <ValidationForm
                 data={currentData}
+                onImageClick={() =>
+                      setModalSrc(`/api/bukti_setor/uploads/${currentData?.preview_image}`)}
                 updateData={(updatedFields) => {
                   const updated = [...formPages];
                   updated[currentIndex].data = {
@@ -201,6 +225,12 @@ function App() {
         </>
       ) : (
         !isProcessing && <TutorialPanel />
+      )}
+      {modalSrc && (
+        <ImageModal
+          src={modalSrc}
+          onClose={() => setModalSrc(null)}
+        />
       )}
     </Layout>
   );
