@@ -1,0 +1,190 @@
+/* Base container */
+.landing-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 100vw;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background-color: var(--background);
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+/* Sticky note */
+.sticky-note {
+  position: absolute;
+  top: 6rem;
+  left: 2.5rem;
+  max-width: 200px;
+  transform: rotate(-6deg);
+  z-index: 10;
+  background-color: #fef08a;
+  color: #000;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.check-icon {
+  margin-top: 0.5rem;
+  color: #3b82f6;
+  font-size: 24px;
+}
+
+/* Reminder card */
+.reminder-card {
+  position: absolute;
+  top: 5rem;
+  right: 2.5rem;
+  text-align: left;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+  transform: rotate(3deg);
+}
+
+.reminder-card h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.reminder-time {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Hero text */
+.hero-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #111827;
+  border-radius: 9999px;
+  color: white;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 1rem auto;
+}
+
+.hero-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #9ca3af;
+  margin-top: 0.5rem;
+}
+
+.hero-desc {
+  color: #6b7280;
+  margin-top: 1rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cta-button {
+  margin-top: 1.5rem;
+  background-color: #2563eb;
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.cta-button:hover {
+  background-color: #1d4ed8;
+}
+
+.hero-section {
+  z-index: 1;
+}
+
+/* Today's tasks */
+.task-card {
+  position: absolute;
+  bottom: 4rem;
+  left: 2.5rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  width: 240px;
+  text-align: left;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.task-card h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.task-progress {
+  width: 100%;
+  background-color: #e5e7eb;
+  height: 0.5rem;
+  border-radius: 9999px;
+  margin-top: 0.25rem;
+  overflow: hidden;
+}
+
+.task-bar-blue {
+  background-color: #3b82f6;
+  height: 100%;
+  width: 60%;
+}
+
+.task-bar-red {
+  background-color: #ef4444;
+  height: 100%;
+  width: 85%;
+}
+
+/* Integrations */
+.integration-card {
+  position: absolute;
+  bottom: 4rem;
+  right: 2.5rem;
+  background-color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  width: 200px;
+  text-align: left;
+}
+
+.integration-card h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.integration-icons {
+  display: flex;
+  gap: 1rem;
+  font-size: 1.5rem;
+  align-items: center;
+}

@@ -12,23 +12,25 @@ const Navbar = () => {
         to="/"
         className={`nav-link ${location.pathname === "/" ? "active" : ""}`}
       >
+        🏠 Home
+      </Link>
+      <Link
+        to="/faktur"
+        className={`nav-link ${location.pathname === "/faktur" ? "active" : ""}`}
+      >
         🧾 OCR
       </Link>
       <Link
         to="/history"
-        className={`nav-link ${
-          location.pathname === "/history" ? "active" : ""
-        }`}
+        className={`nav-link ${location.pathname === "/history" ? "active" : ""}`}
       >
         📜 Laporan
       </Link>
       <Link
         to="/bukti-setor"
-        className={`nav-link ${
-          location.pathname === "/bukti-setor" ? "active" : ""
-        }`}
+        className={`nav-link ${location.pathname === "/bukti-setor" ? "active" : ""}`}
       >
-        🧾 Bukti Setor
+        💵 Bukti Setor
       </Link>
     </nav>
   );
