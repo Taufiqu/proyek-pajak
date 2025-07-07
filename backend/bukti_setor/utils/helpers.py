@@ -15,13 +15,15 @@ def simpan_preview_image(pil_image, upload_folder, page_num, original_filename="
         pil_image.save(buffer, format="JPEG", quality=85)
         img_bytes = buffer.getvalue()
         img_hash = hashlib.md5(img_bytes).hexdigest()
-        
-        
+
         safe_name = os.path.splitext(os.path.basename(original_filename))[0]
         filename = f"{safe_name}_hal_{page_num}_{img_hash[:8]}.jpg"
-        filepath = os.path.join(upload_folder, filename)
         
-        
+        # ➕ simpan ke subfolder "preview"
+        preview_folder = os.path.join(upload_folder, "preview")
+        os.makedirs(preview_folder, exist_ok=True)
+        filepath = os.path.join(preview_folder, filename)
+
         if not os.path.exists(filepath):
             with open(filepath, "wb") as f:
                 f.write(img_bytes)

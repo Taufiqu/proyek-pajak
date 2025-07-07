@@ -34,7 +34,7 @@ def process_invoice_file(request, config):
 
     try:
         if file.filename.lower().endswith(".pdf"):
-            images = convert_from_path(filepath, poppler_path="C:\\poppler\\poppler-24.08.0\\Library\\bin")
+            images = convert_from_path(filepath, poppler_path="C:\\Program Files\\poppler-24.08.0\\Library\\bin")
         else:
             with Image.open(filepath) as img:
                 images = [img.copy()]  # salinan aman

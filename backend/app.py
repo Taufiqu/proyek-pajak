@@ -9,6 +9,7 @@ import os
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from flask import send_from_directory
 
 # ==============================================================================
 # 3. Impor Lokal Aplikasi Anda
@@ -37,6 +38,7 @@ CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
 
 db.init_app(app)
 app.register_blueprint(bukti_setor_bp)
+app.register_blueprint(laporan_bp)
 from flask_migrate import Migrate  # ⬅️ import ini di bagian atas
 migrate = Migrate(app, db)        # ⬅️ ini setelah db.init_app(app)
 
@@ -96,8 +98,10 @@ def delete_bukti_setor_endpoint(id):
 
 @app.route("/preview/<filename>")
 def serve_preview(filename):
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    preview_folder = os.path.join(app.config['UPLOAD_FOLDER'], "preview")
+    filepath = os.path.join(preview_folder, filename)
     return send_file(filepath, mimetype="image/jpeg")
+
 
 # ==============================================================================
 # MAIN ENTRY POINT
