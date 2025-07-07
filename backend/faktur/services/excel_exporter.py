@@ -4,6 +4,7 @@ from flask import send_file, jsonify
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Alignment, Border, Font, Side
 from models import PpnMasukan, PpnKeluaran
+from flask import current_app
 
 def generate_excel_export(db):
     try:
@@ -56,7 +57,7 @@ def generate_excel_export(db):
 
         # Load template
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        template_path = os.path.join(BASE_DIR, "..", "templates", "rekap_template.xlsx")
+        template_path = os.path.join(current_app.root_path, "templates", "rekap_template.xlsx")
         template_path = os.path.normpath(template_path)
 
         wb = load_workbook(template_path)

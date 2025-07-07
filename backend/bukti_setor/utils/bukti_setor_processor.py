@@ -15,7 +15,7 @@ from .parsing.kode_setor import parse_kode_setor
 
 def _extract_data_from_image(pil_image, upload_folder, page_num=1):
     start_total = time.time()
-    preview_filename = simpan_preview_image(pil_image, upload_folder)
+    preview_filename = simpan_preview_image(pil_image, upload_folder, page_num)
 
     img_cv = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
     MAX_WIDTH = 1000
