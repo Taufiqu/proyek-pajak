@@ -1,7 +1,24 @@
+# Ignore Python junk
 __pycache__/
 *.pyc
 *.pyo
-*.jpg
+
+# Ignore environment files
+.env
+*.log
+
+# Ignore Python virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# Ignore uploads & debug files
 uploads/
 debug/
-.env
+
+# Ignore frontend
+frontend/
+node_modules/
+dist/
+build/
