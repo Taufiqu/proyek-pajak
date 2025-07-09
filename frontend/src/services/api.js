@@ -1,59 +1,49 @@
+// File: frontend/src/services/api.js
+// Description: API service for handling requests to the backend.
+
 import axios from "axios";
 
 // ========= BASE URL =========
+// Gunakan SATU sumber kebenaran untuk URL API Anda.
 const API_URL = process.env.REACT_APP_API_URL;
 
 // ========= AXIOS INSTANCES =========
 
-// 🔹 JSON Instance
-export const apiJson = axios.create({
-  baseURL: API_URL,
+// 🔹 Instance umum untuk semua permintaan (JSON, delete, get, dll.)
+export const api = axios.create({
+  baseURL: API_URL, // <-- Selalu gunakan variabel dari .env
   timeout: 20000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// 🔸 FormData Instance
+// 🔸 Instance khusus untuk upload file (FormData)
 export const apiForm = axios.create({
-  baseURL: API_URL,
-  timeout: 300000,
+  baseURL: API_URL, // <-- Selalu gunakan variabel dari .env
+  timeout: 300000, // Timeout lebih lama untuk upload besar
 });
 
-// 🔻 Bukti Setor Instance
-const api = axios.create({
-  baseURL: "http://localhost:5000/api/bukti_setor",
-  timeout: 10000,
-});
-
-// ⛑️ Interceptor setelah deklarasi
-api.interceptors.response.use(null, async (error) => {
-  if (error.code === "ERR_NETWORK") {
-    console.warn("🔁 Network error detected, retrying...");
-    return api.request(error.config);
-  }
-  return Promise.reject(error);
-});
 
 // ========= ENDPOINTS =========
 
-// --- FAKTUR
-export const processFaktur = (formData) => apiForm.post("/api/process", formData);
-export const saveFaktur = (data) => apiJson.post("/api/save", data);
-export const deleteFaktur = (jenis, id) => apiJson.delete(`/api/delete/${jenis}/${id}`);
-export const fetchFakturHistory = () => apiJson.get("/api/history");
+// --- FAKTUR & BUKTI SETOR (PROSESNYA SAMA) ---
 
-// --- BUKTI SETOR
+// 🔥 DIPERBAIKI: Kedua fungsi sekarang menunjuk ke endpoint yang sama dan benar.
+export const processFaktur = (formData) => apiForm.post("/api/bukti_setor/process", formData);
 export const processBuktiSetor = (formData) => apiForm.post("/api/bukti_setor/process", formData);
-export const saveBuktiSetor = (data) => api.post("/save", data);
-export const fetchBuktiSetor = (jenis) => api.get(`/api/bukti_setor/${jenis}`);
-export const deleteBuktiSetor = (id) => apiJson.delete(`/api/bukti_setor/delete/${id}`);
-export const fetchBuktiSetorHistory = () => apiJson.get("/api/bukti_setor/history");
+
+// --- SIMPAN DATA
+export const saveFaktur = (data) => api.post("/api/save", data);
+export const saveBuktiSetor = (data) => api.post("/api/bukti_setor/save", data);
+
+// --- HAPUS DATA
+export const deleteFaktur = (jenis, id) => api.delete(`/api/delete/${jenis}/${id}`);
+export const deleteBuktiSetor = (id) => api.delete(`/api/bukti_setor/delete/${id}`);
+
+// --- AMBIL HISTORY
+export const fetchFakturHistory = () => api.get("/api/history");
+export const fetchBuktiSetorHistory = () => api.get("/api/bukti_setor/history");
 
 // --- MISC
-export const fetchHistory = () => apiJson.get("/api/history");
-export const exportExcel = () => apiJson.get("/api/export", { responseType: "blob" });
-
-// Optional export
-const apiInstances = { apiJson, apiForm };
-export default apiInstances;
+export const exportExcel = () => api.get("/api/export", { responseType: "blob" });
