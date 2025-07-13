@@ -4,8 +4,10 @@
 import axios from "axios";
 
 // ========= BASE URL =========
-// Gunakan SATU sumber kebenaran untuk URL API Anda.
+// Pastikan ini selalu menjadi satu-satunya sumber URL API Anda.
 const API_URL = process.env.REACT_APP_API_URL;
+const TESSERACT_API = process.env.REACT_APP_TESSERACT_API;
+const EASYOCR_API = process.env.REACT_APP_EASYOCR_API || null; // Optional, bisa null kalau belum siap
 
 // ========= AXIOS INSTANCES =========
 
@@ -18,32 +20,49 @@ export const api = axios.create({
   },
 });
 
+const tesseractOCRapi = axios.create({
+  baseURL: TESSERACT_API,
+  timeout: 20000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+const tesseractOCRapiForm = axios.create({
+  baseURL: TESSERACT_API,
+  timeout: 300000,
+});
+
 // 🔸 Instance khusus untuk upload file (FormData)
 export const apiForm = axios.create({
   baseURL: API_URL, // <-- Selalu gunakan variabel dari .env
   timeout: 300000, // Timeout lebih lama untuk upload besar
 });
 
+const easyOCRApi = EASYOCR_API
+  ? axios.create({
+      baseURL: EASYOCR_API,
+      timeout: 300000,
+    })
+  : null;
 
 // ========= ENDPOINTS =========
 
-// --- FAKTUR & BUKTI SETOR (PROSESNYA SAMA) ---
-
-// 🔥 DIPERBAIKI: Kedua fungsi sekarang menunjuk ke endpoint yang sama dan benar.
-export const processFaktur = (formData) => apiForm.post("/api/bukti_setor/process", formData);
-export const processBuktiSetor = (formData) => apiForm.post("/api/bukti_setor/process", formData);
-
-// --- SIMPAN DATA
+// --- FAKTUR ---
+// 🔥 DIPERBAIKI: Endpoint ini sekarang menunjuk ke alamat yang benar untuk FAKTUR.
+export const processFaktur = (formData) => tesseractOCRapiForm.post("/api/process", formData);
 export const saveFaktur = (data) => api.post("/api/save", data);
-export const saveBuktiSetor = (data) => api.post("/api/bukti_setor/save", data);
-
-// --- HAPUS DATA
 export const deleteFaktur = (jenis, id) => api.delete(`/api/delete/${jenis}/${id}`);
-export const deleteBuktiSetor = (id) => api.delete(`/api/bukti_setor/delete/${id}`);
-
-// --- AMBIL HISTORY
 export const fetchFakturHistory = () => api.get("/api/history");
+
+
+// --- BUKTI SETOR ---
+// ✅ BENAR: Endpoint ini sudah benar untuk BUKTI SETOR.
+export const processBuktiSetor = (formData) => apiForm.post("/api/bukti_setor/process", formData);
+export const saveBuktiSetor = (data) => api.post("/api/bukti_setor/save", data);
+export const deleteBuktiSetor = (id) => api.delete(`/api/bukti_setor/delete/${id}`);
 export const fetchBuktiSetorHistory = () => api.get("/api/bukti_setor/history");
 
-// --- MISC
+
+// --- MISC (Lain-lain) ---
 export const exportExcel = () => api.get("/api/export", { responseType: "blob" });
