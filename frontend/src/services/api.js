@@ -7,7 +7,7 @@ import axios from "axios";
 // Pastikan ini selalu menjadi satu-satunya sumber URL API Anda.
 const API_URL = process.env.REACT_APP_API_URL;
 const TESSERACT_API = process.env.REACT_APP_TESSERACT_API;
-const EASYOCR_API = process.env.REACT_APP_EASYOCR_API || null; // Optional, bisa null kalau belum siap
+const EASYOCR_API = process.env.REACT_APP_EASYOCR_API;
 
 // ========= AXIOS INSTANCES =========
 
@@ -39,10 +39,13 @@ export const apiForm = axios.create({
   timeout: 300000, // Timeout lebih lama untuk upload besar
 });
 
-const easyOCRApi = EASYOCR_API
+const easyOCRApiForm = EASYOCR_API
   ? axios.create({
       baseURL: EASYOCR_API,
       timeout: 300000,
+      headers: {
+    "Content-Type": "application/json",
+  },
     })
   : null;
 
@@ -58,7 +61,7 @@ export const fetchFakturHistory = () => api.get("/api/history");
 
 // --- BUKTI SETOR ---
 // ✅ BENAR: Endpoint ini sudah benar untuk BUKTI SETOR.
-export const processBuktiSetor = (formData) => apiForm.post("/api/bukti_setor/process", formData);
+export const processBuktiSetor = (formData) => easyOCRApiForm.post("/api/bukti_setor/process", formData);
 export const saveBuktiSetor = (data) => api.post("/api/bukti_setor/save", data);
 export const deleteBuktiSetor = (id) => api.delete(`/api/bukti_setor/delete/${id}`);
 export const fetchBuktiSetorHistory = () => api.get("/api/bukti_setor/history");
