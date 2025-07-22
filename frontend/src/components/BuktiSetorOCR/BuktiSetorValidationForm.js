@@ -33,20 +33,7 @@ const BuktiSetorValidationForm = ({
     };
 
    return (
-    <div className="preview-form-container">
-        {/* KIRI: Preview Gambar */}
-        <div className="preview-column">
-        <img
-            src={`/api/bukti_setor/uploads/${itemData.preview_filename}`}
-            alt="Preview"
-            className="preview-img"
-            onClick={onImageClick}
-            style={{ cursor: "zoom-in" }}
-        />
-        </div>
-
-        {/* KANAN: Form Validasi */}
-        <div className="form-column form-validator">
+    <div className="form-validator">
         <h3>Validasi & Koreksi Data Bukti Setor</h3>
 
         <label>Kode Setor:</label>
@@ -75,7 +62,6 @@ const BuktiSetorValidationForm = ({
         {itemData.warning_message && (
             <p className="input-warning">{itemData.warning_message}</p>
         )}
-        </div>
     </div>
     );
 };

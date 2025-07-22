@@ -7,16 +7,18 @@ import NavigationButtonsBuktiSetor from "./NavigationButtonsBuktiSetor";
 import ImageModal from "./ImageModal";
 import { processBuktiSetor, saveBuktiSetor, saveFaktur } from "../../services/api";
 import TutorialPanelBuktiSetor from "./TutorialPanelBuktiSetor";
-import { toast } from "react-toastify";
 import LoadingSpinner from "../LoadingSpinner";
+import { toast } from "react-toastify";
 
 const BuktiSetorPage = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [validationResults, setValidationResults] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [modalSrc, setModalSrc] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const savedResults = localStorage.getItem("buktiValidationResults");
@@ -42,19 +44,18 @@ const BuktiSetorPage = () => {
     }
   }, [validationResults]);
 
+  // Separate useEffect untuk boundary check currentIndex
+  useEffect(() => {
+    if (validationResults.length > 0 && currentIndex >= validationResults.length) {
+      setCurrentIndex(Math.max(0, validationResults.length - 1));
+    }
+  }, [validationResults.length, currentIndex]);
+
   useEffect(() => {
     if (selectedFiles.length > 0) {
       localStorage.setItem("buktiSelectedFiles", JSON.stringify(selectedFiles.map(f => ({ name: f.name }))));
     }
   }, [selectedFiles]);
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Alias ke validationResults supaya nama konsisten kaya di Faktur
-  const formPages = validationResults;
-  const setFormPages = setValidationResults;
-  const fileInputRef = useRef(null);
-  const [files, setFiles] = useState([]);
 
   // 🔄 Proses file upload satu per satu
  const handleProcess = async () => {
@@ -65,13 +66,14 @@ const BuktiSetorPage = () => {
 
   toast.info("Mulai memproses file, mohon tunggu...");
   setIsProcessing(true);
-  setFormPages([]);
-  setCurrentIndex(0);
+  setValidationResults([]); // Reset hasil sebelumnya
+  setCurrentIndex(0); // Reset ke halaman pertama
   setUploadError("");
   setIsLoading(true);
-  setValidationResults([]);
 
   try {
+    const allResults = []; // Kumpulkan semua hasil dulu
+
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
       const formData = new FormData();
@@ -86,21 +88,23 @@ const BuktiSetorPage = () => {
         preview_filename: item.preview_filename || file.name,
       }));
 
-      setValidationResults((prev) => [...prev, ...formatted]);
+      allResults.push(...formatted);
     }
+
+    // Set semua hasil sekaligus
+    setValidationResults(allResults);
+    
+    // Jika ada hasil, set currentIndex ke 0
+    if (allResults.length > 0) {
+      setCurrentIndex(0);
+    }
+    
   } catch (err) {
     console.error("❌ Gagal proses file:", err);
     toast.error("Gagal memproses salah satu file.");
   } finally {
     setIsLoading(false);
     setIsProcessing(false);
-    // 🧭 Tambahkan scroll ke hasil OCR
-    setTimeout(() => {
-      const resultSection = document.querySelector(".preview-form-container");
-      if (resultSection) {
-        resultSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }, 500);
   }
 };
 
@@ -132,9 +136,9 @@ const BuktiSetorPage = () => {
 
   const handleSaveAll = async () => {
     try {
-      const payload = formPages.map((page) => page.data);
-      const res = await saveFaktur(payload);
-      toast.success(res.data.message || "Berhasil simpan semua data!");
+      // Gunakan validationResults untuk save all, karena itu data bukti setor
+      await saveBuktiSetor(validationResults);
+      toast.success("Berhasil simpan semua data bukti setor!");
     } catch (err) {
       console.error("Save all error:", err);
       toast.error("Gagal menyimpan semua data.");
@@ -142,7 +146,7 @@ const BuktiSetorPage = () => {
   };
 
   const handleNext = () => {
-    if (currentIndex < formPages.length - 1) {
+    if (currentIndex < validationResults.length - 1) {
       setCurrentIndex(currentIndex + 1);
     }
   };
@@ -157,7 +161,6 @@ const BuktiSetorPage = () => {
     // 🔄 Reset semua state utama
     setSelectedFiles([]);
     setValidationResults([]);
-    setFiles([]);
     setCurrentIndex(0);
     setModalSrc(null);
     setUploadError("");
@@ -196,32 +199,45 @@ const BuktiSetorPage = () => {
           <TutorialPanelBuktiSetor />
         ) : (
           <>
-            {/* 📄 Tampilkan semua hasil OCR */}
-            {validationResults.map((data) => (
-              <div className="preview-form-container" key={data.id}>
-                <div className="form-column">
-                  <BuktiSetorValidationForm
-                    itemData={data}
-                    onDataChange={handleDataChange}
-                    onSave={() => handleSaveItem(data.id)}
-                    onImageClick={() =>
-                      setModalSrc(`/api/bukti_setor/uploads/${data.preview_filename}`)}
+            {/* 📄 Tampilkan hasil OCR halaman saat ini berdasarkan currentIndex */}
+            {validationResults.length > 0 && (
+              <div className="preview-form-container">
+                <div className="preview-column">
+                  <img
+                    src={`/api/bukti_setor/uploads/${validationResults[currentIndex]?.preview_filename}`}
+                    alt="Preview"
+                    className="preview-img"
+                    onClick={() =>
+                      setModalSrc(`/api/bukti_setor/uploads/${validationResults[currentIndex]?.preview_filename}`)}
+                    style={{ cursor: "zoom-in" }}
                   />
                 </div>
-                <NavigationButtonsBuktiSetor
-                  currentIndex={currentIndex}
-                  total={validationResults.length}
-                  handleBack={handleBack}
-                  handleNext={handleNext}
-                  handleSave={() => handleSaveItem(validationResults[currentIndex]?.id)}
-                  handleSaveAll={handleSaveAll}
-                  handleReset={handleReset}
-                />
+                <div className="form-column">
+                  <BuktiSetorValidationForm
+                    itemData={validationResults[currentIndex]}
+                    onDataChange={handleDataChange}
+                    onSave={() => handleSaveItem(validationResults[currentIndex]?.id)}
+                    onImageClick={() =>
+                      setModalSrc(`/api/bukti_setor/uploads/${validationResults[currentIndex]?.preview_filename}`)}
+                  />
+                </div>
               </div>
-            ))}
+            )}
+
+            {/* 🧭 NavigationButtons di luar, hanya 1 set */}
+            <NavigationButtonsBuktiSetor
+              currentIndex={currentIndex}
+              total={validationResults.length}
+              handleBack={handleBack}
+              handleNext={handleNext}
+              handleSave={() => handleSaveItem(validationResults[currentIndex]?.id)}
+              handleSaveAll={handleSaveAll}
+              handleReset={handleReset}
+            />
+
             {modalSrc && (
               <ImageModal
-                src={`http://localhost:5000${modalSrc}`} // atau langsung `modalSrc` kalau udah full URL
+                src={`http://localhost:5000${modalSrc}`}
                 onClose={() => setModalSrc(null)}
               />
             )}
