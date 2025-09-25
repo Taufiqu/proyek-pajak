@@ -7,22 +7,23 @@ import NavigationButtonsBuktiSetor from "./NavigationButtonsBuktiSetor";
 import ImageModal from "./ImageModal";
 import { processBuktiSetor, saveBuktiSetor, saveFaktur } from "../../services/api";
 import TutorialPanelBuktiSetor from "./TutorialPanelBuktiSetor";
-import LoadingSpinner from "../LoadingSpinner";
 import { toast } from "react-toastify";
+import LoadingSpinner from "../LoadingSpinner";
 
 const BuktiSetorPage = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [validationResults, setValidationResults] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [modalSrc, setModalSrc] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     const savedResults = localStorage.getItem("buktiValidationResults");
     const savedFiles = localStorage.getItem("buktiSelectedFiles");
+    const savedIndex = localStorage.getItem("buktiCurrentIndex");
 
     if (savedResults) {
       setValidationResults(JSON.parse(savedResults));
@@ -36,20 +37,22 @@ const BuktiSetorPage = () => {
         console.warn("Gagal parse saved selected files");
       }
     }
+
+    if (savedIndex) {
+      setCurrentIndex(parseInt(savedIndex, 10) || 0);
+    }
   }, []);
 
   useEffect(() => {
     if (validationResults.length > 0) {
       localStorage.setItem("buktiValidationResults", JSON.stringify(validationResults));
+      localStorage.setItem("buktiCurrentIndex", currentIndex.toString());
+      // Reset currentIndex jika melebihi batas array
+      if (currentIndex >= validationResults.length) {
+        setCurrentIndex(0);
+      }
     }
-  }, [validationResults]);
-
-  // Separate useEffect untuk boundary check currentIndex
-  useEffect(() => {
-    if (validationResults.length > 0 && currentIndex >= validationResults.length) {
-      setCurrentIndex(Math.max(0, validationResults.length - 1));
-    }
-  }, [validationResults.length, currentIndex]);
+  }, [validationResults, currentIndex]);
 
   useEffect(() => {
     if (selectedFiles.length > 0) {
@@ -64,47 +67,54 @@ const BuktiSetorPage = () => {
     return;
   }
 
+  console.log("🚀 Starting process with files:", selectedFiles);
   toast.info("Mulai memproses file, mohon tunggu...");
   setIsProcessing(true);
-  setValidationResults([]); // Reset hasil sebelumnya
-  setCurrentIndex(0); // Reset ke halaman pertama
+  setValidationResults([]);
+  setCurrentIndex(0);
   setUploadError("");
   setIsLoading(true);
 
   try {
-    const allResults = []; // Kumpulkan semua hasil dulu
-
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
+      console.log(`📁 Processing file ${i + 1}/${selectedFiles.length}:`, file.name);
+      
       const formData = new FormData();
       formData.append("file", file);
 
+      console.log("🌐 Sending request to processBuktiSetor...");
       const res = await processBuktiSetor(formData);
-      const rawData = res.data?.data || [];
+      console.log("✅ Response received:", res);
+      console.log("📦 Full response data:", res.data);
+      
+      // Backend mengembalikan array langsung, bukan object dengan property 'results'
+      const rawData = Array.isArray(res.data) ? res.data : [];
+      console.log("📄 Raw data from backend:", rawData);
 
       const formatted = rawData.map((item) => ({
-        ...item,
+        // Flatten structure: ambil data dari nested object
+        kode_setor: item.data?.kode_setor || "",
+        tanggal: item.data?.tanggal || "",
+        jumlah: item.data?.jumlah || 0,
+        halaman: item.halaman || 1,
+        // Perbaiki nama field untuk preview
+        preview_filename: item.preview_image || file.name,
         id: `bukti-${Date.now()}-${Math.random()}`,
-        preview_filename: item.preview_filename || file.name,
       }));
 
-      allResults.push(...formatted);
+      console.log("🔧 Formatted data:", formatted);
+      setValidationResults((prev) => [...prev, ...formatted]);
     }
-
-    // Set semua hasil sekaligus
-    setValidationResults(allResults);
-    
-    // Jika ada hasil, set currentIndex ke 0
-    if (allResults.length > 0) {
-      setCurrentIndex(0);
-    }
-    
   } catch (err) {
     console.error("❌ Gagal proses file:", err);
+    console.error("❌ Error details:", err.response?.data || err.message);
     toast.error("Gagal memproses salah satu file.");
   } finally {
     setIsLoading(false);
     setIsProcessing(false);
+    console.log("🏁 Process completed");
+    toast.success("Selesai memproses file!");
   }
 };
 
@@ -123,11 +133,18 @@ const BuktiSetorPage = () => {
     const item = validationResults.find((val) => val.id === id);
     if (!item) return;
 
-    console.log("[🛰️ DATA YANG DIKIRIM KE BACKEND]", item); // Tambahin ini!
-
     try {
       await saveBuktiSetor(item);
       toast.success("Data berhasil disimpan.");
+      
+      // 🗑️ Hapus item yang sudah disimpan dari hasil OCR
+      setValidationResults((prev) => prev.filter((val) => val.id !== id));
+      
+      // 📍 Adjust current index if necessary
+      if (currentIndex >= validationResults.length - 1 && currentIndex > 0) {
+        setCurrentIndex(currentIndex - 1);
+      }
+      
     } catch (err) {
       console.error("❌ Gagal simpan:", err);
       toast.error("Gagal menyimpan data.");
@@ -136,9 +153,15 @@ const BuktiSetorPage = () => {
 
   const handleSaveAll = async () => {
     try {
-      // Gunakan validationResults untuk save all, karena itu data bukti setor
-      await saveBuktiSetor(validationResults);
-      toast.success("Berhasil simpan semua data bukti setor!");
+      const payload = validationResults.map((item) => item);
+      // ✅ Fix: Gunakan saveBuktiSetor untuk bukti setor
+      const res = await saveBuktiSetor(payload);
+      toast.success(res.data.message || "Berhasil simpan semua data!");
+      
+      // 🗑️ Hapus semua item yang sudah disimpan dari hasil OCR
+      setValidationResults([]);
+      setCurrentIndex(0);
+      
     } catch (err) {
       console.error("Save all error:", err);
       toast.error("Gagal menyimpan semua data.");
@@ -168,6 +191,7 @@ const BuktiSetorPage = () => {
     // 🗑️ Bersihin localStorage
     localStorage.removeItem("buktiValidationResults");
     localStorage.removeItem("buktiSelectedFiles");
+    localStorage.removeItem("buktiCurrentIndex");
 
     // ❌ Kosongin input file
     if (fileInputRef.current) {
@@ -199,45 +223,35 @@ const BuktiSetorPage = () => {
           <TutorialPanelBuktiSetor />
         ) : (
           <>
-            {/* 📄 Tampilkan hasil OCR halaman saat ini berdasarkan currentIndex */}
+            {/* 📄 Tampilkan halaman saat ini saja (navigation method) */}
             {validationResults.length > 0 && (
               <div className="preview-form-container">
-                <div className="preview-column">
-                  <img
-                    src={`/api/bukti_setor/uploads/${validationResults[currentIndex]?.preview_filename}`}
-                    alt="Preview"
-                    className="preview-img"
-                    onClick={() =>
-                      setModalSrc(`/api/bukti_setor/uploads/${validationResults[currentIndex]?.preview_filename}`)}
-                    style={{ cursor: "zoom-in" }}
-                  />
-                </div>
                 <div className="form-column">
                   <BuktiSetorValidationForm
                     itemData={validationResults[currentIndex]}
                     onDataChange={handleDataChange}
                     onSave={() => handleSaveItem(validationResults[currentIndex]?.id)}
-                    onImageClick={() =>
-                      setModalSrc(`/api/bukti_setor/uploads/${validationResults[currentIndex]?.preview_filename}`)}
+                    onImageClick={() => {
+                      const baseUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+                      const newSrc = `${baseUrl}/api/bukti_setor/uploads/${validationResults[currentIndex]?.preview_filename}`;
+                      setModalSrc(newSrc);
+                    }}
                   />
                 </div>
+                <NavigationButtonsBuktiSetor
+                  currentIndex={currentIndex}
+                  total={validationResults.length}
+                  handleBack={handleBack}
+                  handleNext={handleNext}
+                  handleSave={() => handleSaveItem(validationResults[currentIndex]?.id)}
+                  handleSaveAll={handleSaveAll}
+                  handleReset={handleReset}
+                />
               </div>
             )}
-
-            {/* 🧭 NavigationButtons di luar, hanya 1 set */}
-            <NavigationButtonsBuktiSetor
-              currentIndex={currentIndex}
-              total={validationResults.length}
-              handleBack={handleBack}
-              handleNext={handleNext}
-              handleSave={() => handleSaveItem(validationResults[currentIndex]?.id)}
-              handleSaveAll={handleSaveAll}
-              handleReset={handleReset}
-            />
-
             {modalSrc && (
               <ImageModal
-                src={`http://localhost:5000${modalSrc}`}
+                src={modalSrc}
                 onClose={() => setModalSrc(null)}
               />
             )}

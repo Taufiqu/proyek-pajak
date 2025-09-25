@@ -9,8 +9,14 @@ const NavigationButtonsBuktiSetor = ({
   handleSaveAll,
   handleReset,
 }) => {
+  // Jangan render jika tidak ada data
+  if (total === 0) return null;
+
   return (
     <div className="navigation-buttons">
+      <div className="page-indicator">
+        Halaman {currentIndex + 1} dari {total}
+      </div>
       <button onClick={handleBack} disabled={currentIndex === 0}>
         ◀ Kembali
       </button>

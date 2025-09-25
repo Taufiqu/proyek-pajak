@@ -8,19 +8,23 @@ const TutorialPanelBuktiSetor = () => {
       <ol>
         <li>
           <strong>Pilih File:</strong> Klik tombol "📁 Pilih File" untuk memilih
-          gambar atau PDF bukti setor.
+          satu atau lebih gambar/PDF bukti setor.
         </li>
         <li>
           <strong>Proses File:</strong> Setelah memilih file, klik tombol
           "Proses" untuk memulai ekstraksi data OCR.
         </li>
         <li>
+          <strong>Navigasi Hasil:</strong> Jika ada multiple file, gunakan tombol 
+          "◀ Kembali" dan "Lanjut ▶" untuk berpindah antar halaman hasil OCR.
+        </li>
+        <li>
           <strong>Validasi Data:</strong> Periksa data hasil ekstraksi seperti{" "}
           <em>Kode Setor</em>, <em>Jumlah</em>, dan <em>Tanggal</em>. Koreksi jika diperlukan.
         </li>
         <li>
-          <strong>Simpan Data:</strong> Klik "💾 Simpan Halaman Ini" atau "💾
-          Simpan Semua Halaman" untuk menyimpan data ke dalam laporan.
+          <strong>Simpan Data:</strong> Klik "💾 Simpan Halaman Ini" untuk menyimpan 
+          halaman saat ini, atau "💾 Simpan Semua Halaman" untuk menyimpan semua data sekaligus.
         </li>
       </ol>
       <p className="tutorial-footer">
