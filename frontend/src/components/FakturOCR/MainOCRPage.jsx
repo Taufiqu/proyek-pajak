@@ -1,7 +1,6 @@
-//MainOCRPage.jsx
+// MainOCRPage.jsx
 
-import React, { useState, useRef } from "react";
-import { useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
 import UploadForm from "./UploadForm";
 import PreviewPanel from "./PreviewPanel";
@@ -11,9 +10,13 @@ import TutorialPanel from "./TutorialPanel";
 import Layout from "../Layout";
 import LoadingSpinner from "../LoadingSpinner";
 import ImageModal from "./ImageModal";
-import { 
+import "../ServiceStatus.css";
+import {
   processFaktur,
   saveFaktur,
+  handleApiError,
+  testFakturConnection,
+  getPreviewUrl,
 } from "../../services/api";
 
 function App() {
@@ -24,8 +27,10 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [modalSrc, setModalSrc] = useState(null);
+  const [serviceStatus, setServiceStatus] = useState({ connected: null, message: "" });
 
-  // Load hasil dari localStorage saat pertama kali komponen render
+  const fileInputRef = useRef(null);
+
   useEffect(() => {
     const savedPages = localStorage.getItem("formPages");
     const savedIndex = localStorage.getItem("formIndex");
@@ -35,15 +40,12 @@ function App() {
     }
   }, []);
 
-    useEffect(() => {
-      if (formPages.length > 0) {
-        localStorage.setItem("formPages", JSON.stringify(formPages));
-        localStorage.setItem("formIndex", currentIndex);
-      }
-    }, [formPages, currentIndex]);
-
-  const fileInputRef = useRef(null);
-
+  useEffect(() => {
+    if (formPages.length > 0) {
+      localStorage.setItem("formPages", JSON.stringify(formPages));
+      localStorage.setItem("formIndex", currentIndex);
+    }
+  }, [formPages, currentIndex]);
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -59,28 +61,52 @@ function App() {
       const allPages = [];
 
       for (const file of selectedFiles) {
+        console.log(`📁 Processing file: ${file.name}`);
         const formData = new FormData();
         formData.append("file", file);
         formData.append("nama_pt_utama", namaPtUtama);
 
-        const res = await processFaktur(formData);
-
+        // Log FormData contents for debugging
         for (let [key, value] of formData.entries()) {
-          console.log(`${key}:`, value);
+          console.log(`📋 FormData ${key}:`, value);
         }
 
-        if (res.data?.results) {
+        const res = await processFaktur(formData);
+        console.log("📦 Full response for", file.name, ":", res);
+
+        // Response sudah ditransform oleh processFaktur function
+        if (res.data?.results && Array.isArray(res.data.results)) {
+          console.log("✅ Adding results to allPages:", res.data.results);
           allPages.push(...res.data.results);
         } else {
-          toast.error("Data hasil tidak ditemukan.");
+          console.warn("⚠️ No results found in response for", file.name);
+          console.log("🔍 Response structure:", res.data);
+          toast.warn(`Tidak ada data yang berhasil diekstrak dari ${file.name}`);
         }
       }
 
-      setFormPages(allPages);
-      toast.success("Semua file berhasil diproses!");
+      console.log("🎯 Total pages processed:", allPages.length);
+      console.log("📊 All pages data:", allPages);
+      
+      if (allPages.length > 0) {
+        setFormPages(allPages);
+        toast.success(`✅ Berhasil memproses ${allPages.length} halaman dari ${selectedFiles.length} file!`);
+      } else {
+        toast.warn("⚠️ Tidak ada data yang berhasil diekstrak dari file yang diupload.");
+      }
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Terjadi kesalahan saat upload.");
+      toast.warn("Pilih file PDF atau Image (JPG/PNG) saja.");
+      
+      // Jika error 502, coba test connection untuk diagnose
+      if (error.response?.status === 502) {
+        console.log("🔍 Testing service connection due to 502 error...");
+        testFakturConnection().then(result => {
+          if (!result.success) {
+            console.error("🚨 Service connection test failed:", result.error);
+          }
+        });
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -119,11 +145,24 @@ function App() {
     try {
       const res = await saveFaktur(payload);
       toast.success(res.data.message || "Data berhasil disimpan!");
-      localStorage.removeItem("formPages");
-      localStorage.removeItem("formIndex");
+      
+      // 🗑️ Hapus halaman yang sudah disimpan dari hasil OCR
+      const updatedPages = formPages.filter((_, index) => index !== currentIndex);
+      setFormPages(updatedPages);
+      
+      // 📍 Adjust current index if necessary
+      if (currentIndex >= updatedPages.length && currentIndex > 0) {
+        setCurrentIndex(currentIndex - 1);
+      } else if (updatedPages.length === 0) {
+        setCurrentIndex(0);
+        // Clear localStorage when no pages left
+        localStorage.removeItem("formPages");
+        localStorage.removeItem("formIndex");
+      }
+      
     } catch (err) {
       console.error("Save error:", err);
-      toast.error("Gagal menyimpan data.");
+      toast.error("Gagal menyimpan data, Data sudah ada.");
     }
   };
 
@@ -132,9 +171,18 @@ function App() {
       const payload = formPages.map((page) => page.data);
       const res = await saveFaktur(payload);
       toast.success(res.data.message || "Berhasil simpan semua data!");
+      
+      // 🗑️ Hapus semua halaman yang sudah disimpan dari hasil OCR
+      setFormPages([]);
+      setCurrentIndex(0);
+      
+      // Clear localStorage
+      localStorage.removeItem("formPages");
+      localStorage.removeItem("formIndex");
+      
     } catch (err) {
       console.error("Save all error:", err);
-      toast.error("Gagal menyimpan semua data.");
+      toast.error("Gagal menyimpan semua data, Data sudah ada.");
     }
   };
 
@@ -161,19 +209,38 @@ function App() {
     setCurrentIndex(0);
 
     if (fileInputRef.current) {
-          fileInputRef.current.value = null;
-        }
-    
-        toast.info("Form berhasil di-reset 🚿");
-  }
+      fileInputRef.current.value = null;
+    }
 
-  const currentData = formPages[currentIndex]?.data;
+    toast.info("Form berhasil di-reset 🚿");
+  };
+
+  // Current page data
+  const currentPage = formPages[currentIndex];
+  
+  // ✅ Construct preview URL from uploads folder
+  const finalPreviewUrl = getPreviewUrl(currentPage);
+  
+  console.log("🖼️ Current page preview_image:", currentPage?.preview_image);
+  console.log("� Final preview URL:", finalPreviewUrl);
 
   return (
     <Layout>
       {isProcessing && <LoadingSpinner message="Sedang memproses file..." />}
 
       <h1 className="page-title">OCR Faktur Pajak</h1>
+
+      {/* Service Status Display */}
+      {serviceStatus.connected !== null && (
+        <div className={`service-status ${serviceStatus.connected ? 'connected' : 'disconnected'}`}>
+          <p>{serviceStatus.message}</p>
+          {!serviceStatus.connected && (
+            <small>
+              🔧 Pastikan backend berjalan di localhost:5000 dengan perintah: python app.py
+            </small>
+          )}
+        </div>
+      )}
 
       <UploadForm
         handleUpload={handleUpload}
@@ -190,17 +257,14 @@ function App() {
           <div className="preview-form-container">
             <div className="preview-column">
               <PreviewPanel
-                data={currentData}
-                onImageClick={() =>
-                  setModalSrc(`${process.env.REACT_APP_API_URL}/preview/${currentData.preview_image}`)
-                }
+                data={currentPage}
+                onImageClick={() => setModalSrc(finalPreviewUrl)}
               />
             </div>
             <div className="form-column">
               <ValidationForm
-                data={currentData}
-                onImageClick={() =>
-                      setModalSrc(`${process.env.REACT_APP_API_URL}/preview/${currentData.preview_image}`)}
+                data={currentPage.data}
+                onImageClick={() => setModalSrc(finalPreviewUrl)}
                 updateData={(updatedFields) => {
                   const updated = [...formPages];
                   updated[currentIndex].data = {
@@ -226,6 +290,7 @@ function App() {
       ) : (
         !isProcessing && <TutorialPanel />
       )}
+
       {modalSrc && (
         <ImageModal
           src={modalSrc}

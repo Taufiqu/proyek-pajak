@@ -1,0 +1,55 @@
+/* Service Status Styles */
+.service-status {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border-left: 4px solid;
+  font-size: 0.9rem;
+}
+
+.service-status.connected {
+  background-color: #d4edda;
+  border-color: #28a745;
+  color: #155724;
+}
+
+.service-status.disconnected {
+  background-color: #f8d7da;
+  border-color: #dc3545;
+  color: #721c24;
+}
+
+.service-status p {
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
+}
+
+.service-status small {
+  display: block;
+  opacity: 0.8;
+  line-height: 1.4;
+}
+
+/* CORS Troubleshooting styles */
+.cors-warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  color: #856404;
+}
+
+.cors-warning h4 {
+  margin: 0 0 0.5rem 0;
+  color: #856404;
+}
+
+.cors-warning ul {
+  margin: 0.5rem 0 0 1rem;
+  padding: 0;
+}
+
+.cors-warning li {
+  margin: 0.25rem 0;
+}

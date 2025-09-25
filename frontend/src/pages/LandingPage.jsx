@@ -1,14 +1,11 @@
 import React from "react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaCheckCircle } from "react-icons/fa";
-import { MdOutlineAccessTime } from "react-icons/md";
-import { SiGmail, SiSlack, SiGooglecalendar } from "react-icons/si";
 import "./LandingPage.css";
 
 const LandingPage = () => {
     const navigate = useNavigate();
-
+    
     useEffect(() => {
       // Tambahkan class body khusus saat masuk Landing Page
       document.body.classList.add("landing-body");
@@ -18,70 +15,61 @@ const LandingPage = () => {
     }, []);
 
   return (
-    <div className="landing-container">
-      {/* Sticky Note + Check */}
-      <div className="sticky-note">
-        <p>
-          Take notes to keep track of crucial details, and accomplish more
-          tasks with ease.
-        </p>
-        <div className="check-icon">
-          <FaCheckCircle />
-        </div>
+    // Perubahan: Mengganti class dari 'landing-container' ke 'landing-page-full'
+    <div className="landing-page-full">
+      
+      {/* Background Decorations: Elemen ini tidak perlu diubah, akan muncul di belakang */}
+      <div className="bg-decorations">
+        <div className="circle circle-1"></div>
+        <div className="circle circle-2"></div>
+        <div className="circle circle-3"></div>
+        <div className="circle circle-4"></div>
+        <div className="circle circle-5"></div>
+        <div className="circle circle-6"></div>
+        <div className="wave-pattern wave-left"></div>
+        <div className="wave-pattern wave-right"></div>
       </div>
 
-      {/* Reminder */}
-      <div className="reminder-card">
-        <h4>Reminders</h4>
-        <p>Today's Meeting</p>
-        <div className="reminder-time">
-          <MdOutlineAccessTime />
-          <span>13:00 - 13:45</span>
+      {/* Main Content */}
+      <div className="main-content">
+        {/* Left Side - Hero Section */}
+        <div className="hero-section">
+          <h1 className="hero-title">
+            SELAMAT<br />
+            DATANG DI<br />
+            APLIKASI OCR<br />
+            DOKUMEN<br />
+            PAJAK
+          </h1>
         </div>
-      </div>
 
-      {/* Hero Content */}
-      <div className="hero-section">
-        <div className="hero-icon">
-            <span>●</span>
-        </div>
-        <h1 className="hero-title">Think, plan, and track</h1>
-        <h2 className="hero-subtitle">all in one place</h2>
-        <p className="hero-desc">
-            Efficiently manage your tasks and boost productivity.
-        </p>
-        <button
-            className="cta-button"
-            onClick={() => navigate("/faktur")}
-        >
-            Masuk ke Aplikasi
-        </button>
-      </div>
-
-      {/* Today's tasks (Bottom Left) */}
-      <div className="task-card">
-        <h4>Today's tasks</h4>
-        <div className="mb-2">
-          <p className="text-sm font-medium">New Ideas for campaign</p>
-          <div className="task-progress">
-            <div className="task-bar-blue"></div>
+        {/* Right Side - Description */}
+        <div className="description-section">
+          <p className="description-text">
+            Aplikasi OCR Dokumen Pajak adalah sebuah tools berbasis web yang dirancang untuk menyederhanakan dan mengotomatisasi proses rekapitulasi dokumen keuangan, khususnya Faktur Pajak dan Bukti Setor. Dengan memanfaatkan teknologi Optical Character Recognition (OCR), aplikasi ini secara otomatis memindai dan mengekstrak data-data penting dari file dokumen dan menyajikannya dalam format formulir yang mudah untuk divalidasi oleh pengguna. Sebagai hasil akhir, seluruh data yang telah tervalidasi dapat diekspor menjadi sebuah laporan dalam format Microsoft Excel, sehingga secara signifikan meningkatkan efisiensi kerja dan mengurangi risiko kesalahan entri data manual (human error).
+          </p>
+          
+          {/* Action Buttons */}
+          <div className="action-buttons">
+            <button
+              className="action-btn primary"
+              onClick={() => navigate("/faktur")}
+            >
+              OCR Faktur Pajak
+            </button>
+            <button
+              className="action-btn secondary"
+              onClick={() => navigate("/bukti-setor")}
+            >
+              OCR Bukti Setor
+            </button>
+            <button
+              className="action-btn tertiary"
+              onClick={() => navigate("/history")}
+            >
+              Riwayat OCR
+            </button>
           </div>
-        </div>
-        <div>
-          <p className="text-sm font-medium">Design PPT #4</p>
-          <div className="task-progress">
-            <div className="task-bar-red"></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Integrations (Bottom Right) */}
-      <div className="integration-card">
-        <h4>100+ Integrations</h4>
-        <div className="integration-icons">
-          <SiGmail className="text-red-500" />
-          <SiSlack className="text-purple-500" />
-          <SiGooglecalendar className="text-blue-500" />
         </div>
       </div>
     </div>

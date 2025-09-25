@@ -22,9 +22,14 @@ const loadHistories = async () => {
       fetchBuktiSetorHistory(),
     ]);
 
-    setData(fakturRes.data || []);
+    // ✅ Kedua endpoint mengembalikan struktur {data: [...]}
+    if (Array.isArray(fakturRes.data?.data)) {
+      setData(fakturRes.data.data);
+    } else {
+      console.warn("⚠️ Response faktur bukan array:", fakturRes.data);
+      setData([]);
+    }
 
-    // ✅ Validasi array dulu sebelum set
     if (Array.isArray(setorRes.data?.data)) {
       setBuktiSetorData(setorRes.data.data);
     } else {
@@ -43,6 +48,12 @@ const loadHistories = async () => {
 };
 
   const handleDelete = async (jenis, id) => {
+    // ✅ Validasi ID dan jenis
+    if (!id || !jenis) {
+      toast.error("Data tidak valid untuk dihapus.");
+      return;
+    }
+
     const confirmMsg =
       jenis === "setor"
         ? "Yakin ingin menghapus bukti setor ini?"
@@ -53,17 +64,27 @@ const loadHistories = async () => {
       if (jenis === "setor") {
         const res = await deleteBuktiSetor(id);
         toast.success(res.data.message || "Bukti setor berhasil dihapus!");
-        const updated = buktiSetorData.filter((item) => item.id !== id);
-        setBuktiSetorData(updated);
+        // ✅ Refresh data dari server untuk memastikan konsistensi
+        await loadHistories();
       } else {
-        const res = await deleteFaktur(jenis, id);
+        const res = await deleteFaktur(id);
         toast.success(res.data.message || "Faktur berhasil dihapus!");
-        const updated = data.filter((item) => item.id !== id);
-        setData(updated);
+        // ✅ Refresh data dari server untuk memastikan konsistensi
+        await loadHistories();
       }
     } catch (err) {
-      toast.error("Gagal menghapus data.");
-      console.error(err);
+      console.error("❌ Delete error:", err);
+      
+      // ✅ Error handling yang lebih spesifik
+      if (err.response?.status === 404) {
+        toast.error("Data tidak ditemukan. Mungkin sudah terhapus.");
+        // Refresh data untuk sync dengan database
+        await loadHistories();
+      } else if (err.response?.status === 500) {
+        toast.error("Terjadi kesalahan server. Silakan coba lagi.");
+      } else {
+        toast.error("Gagal menghapus data.");
+      }
     }
   };
 
@@ -145,7 +166,7 @@ const loadHistories = async () => {
           {data.length > 0 && (
             <a
               className="export-button"
-              href={`${process.env.REACT_APP_API_URL}/api/export`}
+              href={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/export`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -191,10 +212,10 @@ const loadHistories = async () => {
               </table>
             </div>
           )}
-           {data.length > 0 && (
+           {buktiSetorData.length > 0 && (
             <a
               className="export-button"
-              href={`${process.env.REACT_APP_API_URL}/api/export_bukti_setor`}
+              href={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/export_bukti_setor`}
               target="_blank"
               rel="noopener noreferrer"
             >
