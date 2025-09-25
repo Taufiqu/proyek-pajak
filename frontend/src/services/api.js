@@ -89,8 +89,29 @@ export const transformBackendResponse = (backendResponse) => {
 };
 
 // ========= API ENDPOINTS =========
-// (Keep all existing endpoints as they are)
-// ...existing code...
+// --- FAKTUR ENDPOINTS ---
+export const processFaktur = async (formData) => {
+  const response = await formApi.post("/api/process", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  
+  return {
+    ...response,
+    data: transformBackendResponse(response.data).data
+  };
+};
+
+export const saveFaktur = (data) => api.post("/api/save-faktur", data);
+export const deleteFaktur = (id) => api.delete(`/api/faktur/${id}`);
+export const fetchFakturHistory = (page = 1, per_page = 50) => 
+  api.get(`/api/faktur-history?page=${page}&per_page=${per_page}`);
+
+// --- BUKTI SETOR ENDPOINTS ---
+export const processBuktiSetor = (formData) => formApi.post("/api/bukti_setor/process", formData);
+export const saveBuktiSetor = (data) => api.post("/api/save-bukti-setor", data);
+export const deleteBuktiSetor = (id) => api.delete(`/api/bukti_setor/delete/${id}`);
+export const fetchBuktiSetorHistory = (page = 1, per_page = 50) => 
+  api.get(`/api/bukti-setor-history?page=${page}&per_page=${per_page}`);
 
 // ========= UTILITIES =========
 
